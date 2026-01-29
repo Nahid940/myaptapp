@@ -1,1 +1,1 @@
-App initialized
+App initialized ;)

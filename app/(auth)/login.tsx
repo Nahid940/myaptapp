@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { View, TextInput, Pressable , Text, Alert, KeyboardAvoidingView, Platform, StyleSheet, Image } from "react-native";
 import { Stack, useRouter } from "expo-router";
-import { useAuth } from "../context/AuthContext";
-import { api } from "../lib/api";
+import { useAuth } from "../../context/AuthContext";
+import { api } from "../../lib/api";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 export default function LoginPage() {
@@ -46,7 +46,7 @@ export default function LoginPage() {
 
       if (response?.token) {
         await login(response.token);
-        router.replace("(auth)/(tabs)/home");
+        router.replace("(tabs)/home");
       } else {
         Alert.alert("Login Failed", response?.message || "Invalid credentials");
       }
@@ -69,7 +69,7 @@ export default function LoginPage() {
           behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
         <Image
-            source={require("../assets/images/residdologo.png")}
+            source={require("../../assets/images/residdologo.png")}
             style={styles.logo}
             resizeMode="contain"
           />

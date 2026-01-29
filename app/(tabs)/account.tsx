@@ -1,5 +1,5 @@
 import { View, Text, Button, StyleSheet, Alert, useColorScheme } from "react-native";
-import { useAuth } from "../../../context/AuthContext";
+import { useAuth } from "../../context/AuthContext";
 import { useRouter } from "expo-router";
 import { Colors } from "@/constants/theme"; // optional shared theme
 

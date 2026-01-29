@@ -31,7 +31,7 @@ export default function AuthLayout() {
   // User is authenticated → render tabs
   return (
     <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="(tabs)" />
+      <Stack.Screen />
     </Stack>
   );
 }
