@@ -1,21 +1,24 @@
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 
 export default function HomePageIcons() {
   const items = [
-    { title: "Tickets", icon: "ticket", color: "#4facfe", count: 3 },
-    { title: "Notices", icon: "notifications", color: "#43e97b",count: 3 },
-    { title: "Message", icon: "chatbubble", color: "#fa709a", count: 0 },
-    { title: "Alert", icon: "alert-circle", color: "#f7971e", count: 2 },
+    { title: "Tickets", icon: "ticket", color: "#4facfe", count: 3, route:"/ticketsList" },
+    { title: "Notices", icon: "notifications", color: "#43e97b",count: 3, route:"/notices"  },
+    { title: "Message", icon: "chatbubble", color: "#fa709a", count: 0, route:"/messages"  },
+    { title: "Alert", icon: "alert-circle", color: "#f7971e", count: 2, route:"/alerts"  },
   ];
-
+  const router = useRouter();
   return (
     <View style={styles.row}>
       {items.map((item, index) => (
         <TouchableOpacity key={index} style={styles.item}>
-          <View style={[styles.iconContainer, { backgroundColor: item.color }]}>
-            <Ionicons name={item.icon} size={28} color="#fff" />
-          </View>
+          <Pressable onPress={() => router.push(item.route)}>
+            <View style={[styles.iconContainer, { backgroundColor: item.color }]}>
+              <Ionicons name={item.icon} size={28} color="#fff" />
+            </View>
+          </Pressable>
             {item.count > 0 && (
               <View style={styles.badge}>
                 <Text style={styles.badgeText}>{item.count}</Text>

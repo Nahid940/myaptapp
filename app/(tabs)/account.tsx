@@ -1,7 +1,8 @@
-import { View, Text, Button, StyleSheet, Alert, useColorScheme } from "react-native";
+import { View, Text, Button, StyleSheet, Alert, useColorScheme, Pressable } from "react-native";
 import { useAuth } from "../../context/AuthContext";
 import { useRouter } from "expo-router";
 import { Colors } from "@/constants/theme"; // optional shared theme
+import { Ionicons } from "@expo/vector-icons";
 
 export default function AccountScreen() {
   const { user, logout } = useAuth();
@@ -24,22 +25,94 @@ export default function AccountScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <Text style={[styles.title, { color: theme.text }]}>Account Info</Text>
-      <Text style={[styles.info, { color: theme.text }]}>Name: {user?.name}</Text>
-      <Text style={[styles.info, { color: theme.text }]}>Email: {user?.email}</Text>
-      <Text style={[styles.info, { color: theme.text }]}>ID: {user?.id}</Text>
-
-      <View style={styles.logoutButton}>
-        <Button title="Logout" onPress={handleLogout} color={theme.primary} />
+    <View style={styles.container}>
+      
+      {/* Header */}
+      <View style={styles.header}>
+        <Ionicons name="person-circle-outline" size={80} color="#4A90E2" />
+        <Text style={styles.headerText}>Welcome, {user?.name}</Text>
       </View>
+
+      {/* Info Card */}
+      <View style={styles.card}>
+        <View style={styles.infoRow}>
+          <Text style={styles.label}>Name:</Text>
+          <Text style={styles.value}>{user?.name}</Text>
+        </View>
+        <View style={styles.infoRow}>
+          <Text style={styles.label}>Email:</Text>
+          <Text style={styles.value}>{user?.email}</Text>
+        </View>
+        <View style={styles.infoRow}>
+          <Text style={styles.label}>ID:</Text>
+          <Text style={styles.value}>{user?.id}</Text>
+        </View>
+      </View>
+
+      {/* Logout Button */}
+      <Pressable style={styles.logoutButton} onPress={handleLogout}>
+        <Text style={styles.logoutText}>Logout</Text>
+      </Pressable>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: "center", alignItems: "center", padding: 20 },
-  title: { fontSize: 24, fontWeight: "bold", marginBottom: 20 },
-  info: { fontSize: 16, marginBottom: 10 },
-  logoutButton: { marginTop: 30, width: "60%" },
+  container: {
+    flex: 1,
+    padding: 20,
+    backgroundColor: "#fff", // white background
+  },
+  header: {
+    alignItems: "center",
+    paddingVertical: 30,
+    marginBottom: 20,
+  },
+  headerText: {
+    color: "#4A90E2",
+    fontSize: 22,
+    fontWeight: "bold",
+    marginTop: 10,
+  },
+  card: {
+    padding: 20,
+    borderRadius: 15,
+    backgroundColor: "#fff",
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 5 },
+    shadowRadius: 10,
+    elevation: 5, // Android shadow
+    marginBottom: 30,
+  },
+  infoRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 15,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#333",
+  },
+  value: {
+    fontSize: 16,
+    color: "#555",
+  },
+  logoutButton: {
+    paddingVertical: 15,
+    borderRadius: 10,
+    backgroundColor: "#4A90E2",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 5 },
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  logoutText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "bold",
+  },
 });

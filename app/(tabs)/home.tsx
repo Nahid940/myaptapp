@@ -8,7 +8,7 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      <ScrollView style={[styles.container, isDark ? styles.bgDark : styles.bgLight]}>
+      <ScrollView style={[styles.container, isDark ? styles.bgLight : styles.bgLight]}>
         {/* Top Card */}
         
           <View
@@ -16,7 +16,7 @@ export default function HomeScreen() {
               styles.card,
               styles.topCard,
               {
-                backgroundColor: isDark ? "#292b3e" : "#159df8",
+                backgroundColor: "#159df8",
                 borderBottomLeftRadius: 30,
                 borderBottomRightRadius: 30,
                 shadowColor: "#000",
@@ -95,7 +95,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#f5f5f5",
   },
   bgDark: {
-    backgroundColor: "#121212",
+    backgroundColor: "#f5f5f5",
   },
   card: {
     borderRadius: 12,
@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
   cardDark: {
-    backgroundColor: "#1e1e1e",
+    backgroundColor: "#fff",
   },
   topCard: {
     // specific styles if needed
@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   textLight: {
-    color: "#fff",
+    color: "#000",
   },
   textDark: {
     color: "#000",
