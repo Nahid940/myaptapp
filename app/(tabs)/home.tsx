@@ -29,7 +29,7 @@ export default function HomeScreen() {
       >
         <View style={styles.topCardLeft}>
           <Text style={[styles.boldText, { color: "#fff", fontSize: 20 }]}>
-            Hello John
+            Hello, John
           </Text>
           <View style={styles.line} />
           <Text style={[styles.boldText, { color: "#fff", fontSize: 20 }]}>
@@ -42,6 +42,7 @@ export default function HomeScreen() {
           <Text style={{ color: "#fff",  }}>Service Charge: $50</Text>
         </View>
         <View style={styles.topCardRight}>
+            <Text style={{ color: "#fff" }}>Start Date: January 20, 2027</Text>
             <Text style={{ color: "#fff" }}>End Date: January 20, 2027</Text>
             <TouchableOpacity style={styles.paymentButtonCircle}>
               <Text style={styles.paymentButtonCircleText}>Payments</Text>
@@ -52,23 +53,13 @@ export default function HomeScreen() {
         {/* Bottom Cards */}
         <View style={styles.bottomCardsContainer}>
           {/* Row 1 */}
-          <View style={[styles.bottomCard, isDark ? styles.cardDark : styles.cardLight]}>
-            <Text style={[styles.boldText, isDark ? styles.textLight : styles.textDark]}>Total Paid</Text>
-            <Text style={[styles.cardValue, isDark ? styles.textLight : styles.textDark]}>$300</Text>
+          <View style={[styles.bottomCard, styles.paidCard]}>
+            <Text style={styles.cardTitle}>Total Paid</Text>
+            <Text style={styles.cardValue}>300</Text>
           </View>
-          <View style={[styles.bottomCard, isDark ? styles.cardDark : styles.cardLight]}>
-            <Text style={[styles.boldText, isDark ? styles.textLight : styles.textDark]}>Due</Text>
-            <Text style={[styles.cardValue, isDark ? styles.textLight : styles.textDark]}>$270</Text>
-          </View>
-
-          {/* Row 2 */}
-          <View style={[styles.bottomCard, isDark ? styles.cardDark : styles.cardLight]}>
-            <Text style={[styles.boldText, isDark ? styles.textLight : styles.textDark]}>Booking Date</Text>
-            <Text style={[styles.cardValue, isDark ? styles.textLight : styles.textDark]}>01 Jan 2026</Text>
-          </View>
-          <View style={[styles.bottomCard, isDark ? styles.cardDark : styles.cardLight]}>
-            <Text style={[styles.boldText, isDark ? styles.textLight : styles.textDark]}>End Date</Text>
-            <Text style={[styles.cardValue, isDark ? styles.textLight : styles.textDark]}>31 Dec 2026</Text>
+          <View style={[styles.bottomCard, styles.dueCard]}>
+            <Text style={styles.cardTitle}>Remaining Due</Text>
+            <Text style={styles.cardValue}>400</Text>
           </View>
 
           {/* Row 3 */}
@@ -140,21 +131,6 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     justifyContent: "space-between",
   },
-  bottomCard: {
-    width: "48%",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  cardValue: {
-    marginTop: 8,
-    fontSize: 16,
-  },
   line: {
     height: 1,
     backgroundColor: "rgba(255,255,255,0.4)", // semi-transparent white
@@ -182,4 +158,42 @@ paymentButtonCircleText: {
   color: "#f0f1eb",
   fontWeight:900
 },
+
+ bottomCard: {
+    width: 180,
+    borderRadius: 16,
+    paddingVertical: 20,
+    paddingHorizontal: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    elevation: 6, // Android shadow
+    shadowColor: "#000", // iOS shadow
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    marginVertical: 8,
+  },
+
+  paidCard: {
+    backgroundColor: "#67d67f",
+  },
+  dueCard: {
+    backgroundColor: "#f33a68",
+  },
+
+  cardTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#E8F5E9",
+    marginBottom: 6,
+    letterSpacing: 0.5,
+  },
+
+  cardValue: {
+    fontSize: 15,
+    fontWeight: "800",
+    color: "#FFFFFF",
+  },
+
+
 });

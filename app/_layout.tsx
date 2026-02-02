@@ -19,9 +19,10 @@ export default function RootLayout() {
       <ThemeProvider value={colorScheme === 'dark' ? DefaultTheme : DefaultTheme}>
         <AuthProvider>
            <StatusBar hidden={true} />
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="login" options={{ headerShown: false, title: "Login" }} />
-          </Stack>
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="login" options={{ headerShown: false, title: "Login" }} />
+              <Stack screenOptions={{ headerShown: false }} />
+            </Stack>
           <StatusBar style="auto" />
         </AuthProvider>
       </ThemeProvider>

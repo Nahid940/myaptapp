@@ -1,25 +1,53 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, FlatList, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { api } from "../../lib/api";
 
 export default function TicketForm() {
-  const priorityOptions = ["High", "Low", "Medium"];
+  const priorityOptions = ["high", "low", "medium"];
 
   const [subject, setSubject] = useState("");
   const [priority, setPriority] = useState(priorityOptions[0]);
   const [description, setDescription] = useState("");
   const [dropdownVisible, setDropdownVisible] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!subject || !description) {
       Alert.alert("Error", "Please fill all required fields.");
       return;
     }
-    Alert.alert("Success", `Ticket Submitted!\nPriority: ${priority}`);
-    setSubject("");
-    setPriority(priorityOptions[0]);
-    setDescription("");
+
+    setLoading(true);
+
+    try {
+      const response = await api.post("/tickets", {
+        subject,
+        priority,
+        description
+      }
+    );
+
+      // Check if the server responded with a message or success indicator
+      if (response?.message) {
+        Alert.alert("Success", `Ticket Submitted! Thank You.`);
+        
+        // Clear form fields
+        setSubject("");
+        setPriority(priorityOptions[0]); // Make sure priorityOptions exists
+        setDescription("");
+      } else {
+        Alert.alert("Error", "Something went wrong. Please try again");
+      }
+    } catch (error) {
+      console.error("Process Error:", error);
+      Alert.alert("Error", "Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
+
+
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -66,7 +94,7 @@ export default function TicketForm() {
                     setDropdownVisible(false);
                     }}
                 >
-                    <Text>{item}</Text>
+                    <Text>{item.toUpperCase()}</Text>
                 </TouchableOpacity>
                 )}
             />

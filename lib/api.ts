@@ -1,3 +1,4 @@
+import * as SecureStore from "expo-secure-store";
 class ApiService {
   baseUrl: string;
 
@@ -5,14 +6,17 @@ class ApiService {
     this.baseUrl = baseUrl;
   }
 
-  private getHeaders(token?: string) {
+  private async  getHeaders() {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
       Accept: "application/json",
     };
+    const token = await SecureStore.getItemAsync("token");
     if (token) headers["Authorization"] = `Bearer ${token}`;
     return headers;
   }
+
+
 
   private async handleResponse<T>(res: Response): Promise<T> {
     const text = await res.text();
@@ -33,15 +37,15 @@ class ApiService {
   async get<T>(endpoint: string, token?: string): Promise<T> {
     const res = await fetch(`${this.baseUrl}${endpoint}`, {
       method: "GET",
-      headers: this.getHeaders(token),
+      headers: await this.getHeaders(),
     });
     return this.handleResponse<T>(res);
   }
 
-  async post<T>(endpoint: string, body: any, token?: string): Promise<T> {
+  async post<T>(endpoint: string, body: any): Promise<T> {
     const res = await fetch(`${this.baseUrl}${endpoint}`, {
       method: "POST",
-      headers: this.getHeaders(token),
+      headers: await this.getHeaders(),
       body: JSON.stringify(body),
     });
     return this.handleResponse<T>(res);
@@ -50,7 +54,7 @@ class ApiService {
   async put<T>(endpoint: string, body: any, token?: string): Promise<T> {
     const res = await fetch(`${this.baseUrl}${endpoint}`, {
       method: "PUT",
-      headers: this.getHeaders(token),
+      headers: await this.getHeaders(),
       body: JSON.stringify(body),
     });
     return this.handleResponse<T>(res);
@@ -59,7 +63,7 @@ class ApiService {
   async delete<T>(endpoint: string, token?: string): Promise<T> {
     const res = await fetch(`${this.baseUrl}${endpoint}`, {
       method: "DELETE",
-      headers: this.getHeaders(token),
+      headers: await this.getHeaders(),
     });
     return this.handleResponse<T>(res);
   }
