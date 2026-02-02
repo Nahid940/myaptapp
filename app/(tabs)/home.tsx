@@ -1,11 +1,13 @@
-import { View, Text, ScrollView, useColorScheme, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, ScrollView, useColorScheme, StyleSheet, TouchableOpacity, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 // import LinearGradient from "react-native-linear-gradient";
 import HomePageIcons from "@/components/ui/homepageIcons";
+import { useRouter } from "expo-router";
+
 export default function HomeScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
-
+  const router = useRouter();
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <ScrollView style={[styles.container, isDark ? styles.bgLight : styles.bgLight]}>
@@ -45,7 +47,9 @@ export default function HomeScreen() {
             <Text style={{ color: "#fff" }}>Start Date: January 20, 2027</Text>
             <Text style={{ color: "#fff" }}>End Date: January 20, 2027</Text>
             <TouchableOpacity style={styles.paymentButtonCircle}>
-              <Text style={styles.paymentButtonCircleText}>Payments</Text>
+              <Pressable onPress={() => router.push('/payments')}>
+                <Text style={styles.paymentButtonCircleText}>Payments</Text>
+              </Pressable>
             </TouchableOpacity>
         </View>
       </View>
