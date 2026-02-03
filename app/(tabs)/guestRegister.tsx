@@ -1,6 +1,8 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert, Pressable, Platform  } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import DateTimePicker from '@react-native-community/datetimepicker';
+
 
 export default function GuestVisitForm() {
   const [form, setForm] = useState({
@@ -20,7 +22,7 @@ export default function GuestVisitForm() {
   const [accompanying, setAccompanying] = useState([{ name: "", phone: "" }]);
 
   const handleChange = (field: string, value: string) => {
-    setForm({ ...form, [field]: value });
+    // setForm({ ...form, [field]: value });
   };
 
   const handleAccompanyingChange = (index: number, field: string, value: string) => {
@@ -43,6 +45,29 @@ export default function GuestVisitForm() {
     console.log("Guest Visit Data:", form);
     console.log("Accompanying Persons:", accompanying);
     Alert.alert("Success", "Guest Visit Registered!");
+  };
+
+
+  const [entryDate, setEntryDate] = useState<Date | null>(null);
+  const [exitDate, setExitDate] = useState<Date | null>(null);
+
+  const [showEntryPicker, setShowEntryPicker] = useState(false);
+  const [showExitPicker, setShowExitPicker] = useState(false);
+
+  const formatDateTime = (date: Date) => {
+    return date.toISOString().replace('T', ' ').substring(0, 16);
+  };
+
+   const handleEntryChange = (event: any, selectedDate?: Date) => {
+    // Always hide the picker
+    if (Platform.OS === "android") {
+      setShowEntryPicker(false);
+    }
+
+    // Only update if user pressed OK
+    if (event.type === "set" && selectedDate) {
+      setEntryDate(selectedDate);
+    }
   };
 
   return (
@@ -84,27 +109,56 @@ export default function GuestVisitForm() {
             
         </View>
 
-        {/* Entry & Exit */}
         <View style={styles.row}>
-            <View style={styles.inputContainer}>
-            <Text style={styles.label}>Entry Date & Time *</Text>
-            <TextInput
-                style={styles.input}
-                placeholder="YYYY-MM-DD HH:MM"
-                value={form.entryDate}
-                onChangeText={(text) => handleChange("entryDate", text)}
-            />
-            </View>
-            <View style={styles.inputContainer}>
-            <Text style={styles.label}>Exit Date & Time *</Text>
-            <TextInput
-                style={styles.input}
-                placeholder="YYYY-MM-DD HH:MM"
-                value={form.exitDate}
-                onChangeText={(text) => handleChange("exitDate", text)}
-            />
-            </View>
-        </View>
+  {/* Entry Date & Time */}
+  <View style={styles.inputContainer}>
+    <Text style={styles.label}>Entry Date & Time *</Text>
+
+    <Pressable onPress={() => setShowEntryPicker(true)}>
+      <TextInput
+        style={styles.input}
+        placeholder="YYYY-MM-DD HH:MM"
+        value={entryDate ? formatDateTime(entryDate) : ''}
+        editable={false}
+      />
+    </Pressable>
+
+    {showEntryPicker && (
+      <DateTimePicker
+        value={entryDate || new Date()}
+        mode="datetime"
+        display="default"
+        onChange={(event, selectedDate) => {
+          setShowEntryPicker(false);
+          if (event.type === 'set' && selectedDate) setEntryDate(selectedDate);
+        }}
+      />
+    )}
+  </View>
+
+  {/* Exit Date & Time */}
+  <View style={styles.inputContainer}>
+    <Text style={styles.label}>Exit Date & Time *</Text>
+
+    <Pressable onPress={() => setShowExitPicker(true)}>
+      <TextInput
+        style={styles.input}
+        placeholder="YYYY-MM-DD HH:MM"
+        value={exitDate ? formatDateTime(exitDate) : ''}
+        editable={false}
+      />
+    </Pressable>
+
+    {showExitPicker && (
+      <DateTimePicker
+        value={exitDate || new Date()}
+        mode="datetime"
+        display="default"
+        onChange={handleEntryChange}
+      />
+    )}
+  </View>
+</View>
 
         {/* Vehicle & ID */}
         <View style={styles.row}>
@@ -132,7 +186,7 @@ export default function GuestVisitForm() {
             <TextInput
             style={styles.input}
             value={form.visitDuration}
-            onChangeText={(text) => handleChange("visitDuration", text)}
+            onChange={handleEntryChange}
             />
         </View>
 

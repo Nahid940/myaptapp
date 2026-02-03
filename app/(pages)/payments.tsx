@@ -10,14 +10,15 @@ export default function PaymentsList() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
-
+  const [fromPage, setFromPage] = useState(1);
     const fetchTickets = async (pageNumber = 1) => {
     setLoading(true);
     try {
       const response = await api.get(`/payments?page=${pageNumber}`);
-      setPayments(response.payments);
-      setPage(response.pagination.current_page);
-      setLastPage(response.pagination.last_page);
+      setPayments(response.data);
+      setPage(response.current_page);
+      setLastPage(response.last_page);
+      setFromPage(response.from);
     } catch (err) {
       console.error("Error fetching payments:", err);
     } finally {
@@ -42,6 +43,7 @@ export default function PaymentsList() {
           <Text style={[styles.cell, styles.headerText]}>Month</Text>
           <Text style={[styles.cell, styles.headerText]}>Year</Text>
           <Text style={[styles.cell, styles.headerText]}>Amount</Text>
+          <Text style={[styles.cell, styles.headerText]}>Date</Text>
           <Text style={[styles.cell, styles.headerText]}>Action</Text>
         </View>
 
@@ -49,12 +51,15 @@ export default function PaymentsList() {
         {loading && <ActivityIndicator size="large" color="#df1447" />}
 
         {/* Table Rows */}
-        {payments.map((item: any) => (
+        {payments.map((item: any, index: number) => (
           <View key={item.id} style={styles.row}>
-            <Text style={styles.cell}>{item.sl}</Text>
-            <Text style={styles.cell}>{item.month}</Text>
-            <Text style={styles.cell}>{item.year}</Text>
-            <Text style={styles.cell}>{item.amount}</Text>
+            <Text style={styles.cell}>
+            {fromPage + index}
+          </Text>
+            <Text style={styles.cell}>{item.payment_month}</Text>
+            <Text style={styles.cell}>{item.payment_year}</Text>
+            <Text style={styles.cell}>{item.total_paid}</Text>
+            <Text style={styles.cell}>{item.created_at}</Text>
             <Text style={styles.cell}>-</Text>
           </View>
         ))}
