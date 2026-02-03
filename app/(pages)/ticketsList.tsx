@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Button, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "../../lib/api";
+import { Background } from "@react-navigation/elements";
 
 
 export default function TicketsList() {
@@ -30,6 +31,18 @@ export default function TicketsList() {
   }, []);
 
 
+  const getStatusStyle = (status: string) => {
+    switch (status) {
+      case 'open':
+        return { color: '#f1065f', textAlign:'center' };
+      case 'solved':
+        return { color: '#61f186', textAlign:'center' };
+      default:
+        return { color: '#555' };
+    }
+  };
+
+
   return (
 
      <SafeAreaView style={{ flex: 1 }}>
@@ -39,9 +52,10 @@ export default function TicketsList() {
         {/* Table Header */}
         <View style={[styles.row, styles.header]}>
           <Text style={[styles.cell, styles.headerText]}>Subject</Text>
-          <Text style={[styles.cell, styles.headerText]}>Priority</Text>
           <Text style={[styles.cell, styles.headerText]}>Description</Text>
+          <Text style={[styles.cell, styles.headerText]}>Priority</Text>
           <Text style={[styles.cell, styles.headerText]}>Status</Text>
+          <Text style={[styles.cell, styles.headerText]}>Date</Text>
           <Text style={[styles.cell, styles.headerText]}>Action</Text>
         </View>
 
@@ -52,12 +66,14 @@ export default function TicketsList() {
         {tickets.map((item: any) => (
           <View key={item.id} style={styles.row}>
             <Text style={styles.cell}>{item.subject}</Text>
-            <Text style={[styles.cell, styles[item.priority.toLowerCase()]]}>
-              {item.priority}
-            </Text>
             <Text style={styles.cell}>{item.description}</Text>
-            <Text style={styles.cell}>{item.status}</Text>
-            <Text style={styles.cell}>-</Text>
+            <Text style={[styles.cell, styles[item.priority.toLowerCase()]]}>
+              {item.priority.toUpperCase()}
+            </Text>
+            <Text style={[styles.cell, getStatusStyle(item.status)]}>{item.status.toUpperCase()}</Text>
+
+            <Text style={styles.cell}>{item.created_at}</Text>
+            <Text style={styles.cell}></Text>
           </View>
         ))}
 

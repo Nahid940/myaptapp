@@ -69,7 +69,7 @@ export default function TicketForm() {
             style={styles.dropdownButton}
             onPress={() => setDropdownVisible(true)}
         >
-            <Text>{priority}</Text>
+            <Text>{priority.toUpperCase()}</Text>
         </TouchableOpacity>
 
         <Modal
