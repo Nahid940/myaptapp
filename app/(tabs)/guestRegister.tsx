@@ -1,271 +1,325 @@
+import DateTimePicker, {
+  DateTimePickerAndroid,
+} from "@react-native-community/datetimepicker";
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert, Pressable, Platform  } from "react-native";
+import {
+  Alert,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import DateTimePicker from '@react-native-community/datetimepicker';
-
+import { api } from "../../lib/api";
 
 export default function GuestVisitForm() {
+  /* -------------------- FORM -------------------- */
   const [form, setForm] = useState({
-    firstName: "",
-    lastName: "",
+    first_name: "",
+    last_name: "",
     phone: "",
     apartment: "",
     unit: "",
-    entryDate: "",
-    exitDate: "",
-    vehicleNumber: "",
-    idNumber: "",
-    visitDuration: "",
+    vehicle_number: "",
+    id_number: "",
+    visit_duration: "",
     purpose: "",
   });
 
-  const [accompanying, setAccompanying] = useState([{ name: "", phone: "" }]);
-
   const handleChange = (field: string, value: string) => {
-    // setForm({ ...form, [field]: value });
+    setForm(prev => ({ ...prev, [field]: value }));
   };
 
+  const [loading, setLoading] = useState(false); 
+
+  /* -------------------- ACCOMPANYING -------------------- */
+  const [persons, setPersons] = useState([{ first_name: "", phone: "" }]);
+
   const handleAccompanyingChange = (index: number, field: string, value: string) => {
-    const updated = [...accompanying];
+    const updated = [...persons];
     updated[index][field] = value;
-    setAccompanying(updated);
+    setPersons(updated);
   };
 
   const addAccompanying = () => {
-    setAccompanying([...accompanying, { name: "", phone: "" }]);
+    setPersons([...persons, { name: "", phone: "" }]);
   };
 
   const removeAccompanying = (index: number) => {
-    const updated = [...accompanying];
+    const updated = [...persons];
     updated.splice(index, 1);
-    setAccompanying(updated);
+    setPersons(updated);
   };
 
-  const handleSubmit = () => {
-    console.log("Guest Visit Data:", form);
-    console.log("Accompanying Persons:", accompanying);
-    Alert.alert("Success", "Guest Visit Registered!");
-  };
-
-
-  const [entryDate, setEntryDate] = useState<Date | null>(null);
-  const [exitDate, setExitDate] = useState<Date | null>(null);
-
-  const [showEntryPicker, setShowEntryPicker] = useState(false);
-  const [showExitPicker, setShowExitPicker] = useState(false);
+  /* -------------------- DATES -------------------- */
+  const [entryDate, setEntryDate] = useState(new Date());
+  const [exitDate, setExitDate] = useState(new Date());
 
   const formatDateTime = (date: Date) => {
-    return date.toISOString().replace('T', ' ').substring(0, 16);
+    const hours = date.getHours() % 12 || 12; // convert 0-23 → 1-12
+    const minutes = date.getMinutes().toString().padStart(2, "0");
+    const ampm = date.getHours() >= 12 ? "PM" : "AM";
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+    const day = date.getDate().toString().padStart(2, "0");
+
+    return `${year}-${month}-${day} ${hours}:${minutes} ${ampm}`;
   };
 
-   const handleEntryChange = (event: any, selectedDate?: Date) => {
-    // Always hide the picker
-    if (Platform.OS === "android") {
-      setShowEntryPicker(false);
-    }
+  /* -------------------- ANDROID PICKER (DATE + TIME) -------------------- */
+  const openAndroidDateTime = (type: "entry" | "exit") => {
+    // First pick DATE
+    DateTimePickerAndroid.open({
+      value: type === "entry" ? entryDate : exitDate,
+      mode: "date",
+      onChange: (event, date) => {
+        if (event.type !== "set" || !date) return;
 
-    // Only update if user pressed OK
-    if (event.type === "set" && selectedDate) {
-      setEntryDate(selectedDate);
+        // Then pick TIME
+        DateTimePickerAndroid.open({
+          value: date,
+          mode: "time",
+          is24Hour: true,
+          onChange: (e, time) => {
+            if (e.type !== "set" || !time) return;
+
+            const finalDate = new Date(date);
+            finalDate.setHours(time.getHours());
+            finalDate.setMinutes(time.getMinutes());
+
+            type === "entry"
+              ? setEntryDate(finalDate)
+              : setExitDate(finalDate);
+          },
+        });
+      },
+    });
+  };
+
+  /* -------------------- iOS PICKER -------------------- */
+  const [iosPicker, setIosPicker] = useState<"entry" | "exit" | null>(null);
+
+  /* -------------------- SUBMIT -------------------- */
+  const handleSubmit = async () => {
+  // 1️⃣ Validate required fields
+  if (!form.first_name || !form.phone || !entryDate || !exitDate) {
+    Alert.alert("Error", "Please fill all required fields (First Name, Phone, Entry & Exit).");
+    return;
+  }
+
+  setLoading(true);
+
+    try {
+
+      const payload = {
+        ...form,
+        entryDate: entryDate ? entryDate.toISOString() : null,
+        exitDate: exitDate ? exitDate.toISOString() : null,
+        persons: persons.filter(p => p.name || p.phone),
+      };
+
+      const response = await api.post("/guest-register", payload);
+
+      if (response?.data?.status === "success") {
+        Alert.alert("Success", "Guest visit registered successfully!");
+
+        setForm({
+          first_name: "",
+          last_name: "",
+          phone: "",
+          apartment: "",
+          unit: "",
+          vehicle_number: "",
+          id_number: "",
+          visit_duration: "",
+          purpose: "",
+        });
+        setEntryDate(new Date());
+        setExitDate(new Date());
+        setPersons([{ name: "", phone: "" }]);
+      } else {
+        Alert.alert("Error", response?.message || "Something went wrong. Please try again.");
+      }
+    } catch (error) {
+      console.error("Process Error:", error);
+      Alert.alert("Error", "Network error. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
+
+
+  /* -------------------- UI -------------------- */
   return (
     <SafeAreaView style={{ flex: 1 }}>
-        <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
+      <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
         <Text style={styles.heading}>Add Guest Information</Text>
 
-        {/* Name */}
+        {/* NAME */}
         <View style={styles.row}>
-            <View style={styles.inputContainer}>
+          <View style={styles.inputContainer}>
             <Text style={styles.label}>First Name *</Text>
             <TextInput
-                style={styles.input}
-                value={form.firstName}
-                onChangeText={(text) => handleChange("firstName", text)}
+              style={styles.input}
+              value={form.first_name}
+              onChangeText={t => handleChange("first_name", t)}
             />
-            </View>
-            <View style={styles.inputContainer}>
+          </View>
+          <View style={styles.inputContainer}>
             <Text style={styles.label}>Last Name</Text>
             <TextInput
-                style={styles.input}
-                value={form.lastName}
-                onChangeText={(text) => handleChange("lastName", text)}
+              style={styles.input}
+              value={form.last_name}
+              onChangeText={t => handleChange("last_name", t)}
             />
-            </View>
+          </View>
         </View>
 
-        {/* Phone & Apartment */}
+        {/* PHONE */}
         <View style={styles.row}>
-            <View style={styles.inputContainer}>
+          <View style={styles.inputContainer}>
             <Text style={styles.label}>Phone *</Text>
             <TextInput
-                style={styles.input}
-                keyboardType="phone-pad"
-                value={form.phone}
-                onChangeText={(text) => handleChange("phone", text)}
+              style={styles.input}
+              keyboardType="phone-pad"
+              value={form.phone}
+              onChangeText={t => handleChange("phone", t)}
             />
-            </View>
-            
+          </View>
         </View>
 
+        {/* ENTRY / EXIT */}
         <View style={styles.row}>
-  {/* Entry Date & Time */}
-  <View style={styles.inputContainer}>
-    <Text style={styles.label}>Entry Date & Time *</Text>
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Entry Date & Time *</Text>
+            <Pressable
+              onPress={() =>
+                Platform.OS === "android"
+                  ? openAndroidDateTime("entry")
+                  : setIosPicker("entry")
+              }
+            >
+              <TextInput style={styles.input} value={formatDateTime(entryDate)} editable={false} />
+            </Pressable>
+          </View>
 
-    <Pressable onPress={() => setShowEntryPicker(true)}>
-      <TextInput
-        style={styles.input}
-        placeholder="YYYY-MM-DD HH:MM"
-        value={entryDate ? formatDateTime(entryDate) : ''}
-        editable={false}
-      />
-    </Pressable>
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Exit Date & Time *</Text>
+            <Pressable
+              onPress={() =>
+                Platform.OS === "android"
+                  ? openAndroidDateTime("exit")
+                  : setIosPicker("exit")
+              }
+            >
+              <TextInput style={styles.input} value={formatDateTime(exitDate)} editable={false} />
+            </Pressable>
+          </View>
+        </View>
 
-    {showEntryPicker && (
-      <DateTimePicker
-        value={entryDate || new Date()}
-        mode="datetime"
-        display="default"
-        onChange={(event, selectedDate) => {
-          setShowEntryPicker(false);
-          if (event.type === 'set' && selectedDate) setEntryDate(selectedDate);
-        }}
-      />
-    )}
-  </View>
+        {/* iOS picker */}
+        {Platform.OS === "ios" && iosPicker && (
+          <DateTimePicker
+            value={iosPicker === "entry" ? entryDate : exitDate}
+            mode="datetime"
+            display="spinner"
+            onChange={(e, d) => {
+              if (d) iosPicker === "entry" ? setEntryDate(d) : setExitDate(d);
+              setIosPicker(null);
+            }}
+          />
+        )}
 
-  {/* Exit Date & Time */}
-  <View style={styles.inputContainer}>
-    <Text style={styles.label}>Exit Date & Time *</Text>
-
-    <Pressable onPress={() => setShowExitPicker(true)}>
-      <TextInput
-        style={styles.input}
-        placeholder="YYYY-MM-DD HH:MM"
-        value={exitDate ? formatDateTime(exitDate) : ''}
-        editable={false}
-      />
-    </Pressable>
-
-    {showExitPicker && (
-      <DateTimePicker
-        value={exitDate || new Date()}
-        mode="datetime"
-        display="default"
-        onChange={handleEntryChange}
-      />
-    )}
-  </View>
-</View>
-
-        {/* Vehicle & ID */}
+        {/* VEHICLE / ID */}
         <View style={styles.row}>
-            <View style={styles.inputContainer}>
+          <View style={styles.inputContainer}>
             <Text style={styles.label}>Vehicle Number</Text>
             <TextInput
-                style={styles.input}
-                value={form.vehicleNumber}
-                onChangeText={(text) => handleChange("vehicleNumber", text)}
+              style={styles.input}
+              value={form.vehicle_number}
+              onChangeText={t => handleChange("vehicle_number", t)}
             />
-            </View>
-            <View style={styles.inputContainer}>
+          </View>
+          <View style={styles.inputContainer}>
             <Text style={styles.label}>ID</Text>
             <TextInput
-                style={styles.input}
-                value={form.idNumber}
-                onChangeText={(text) => handleChange("idNumber", text)}
+              style={styles.input}
+              value={form.id_number}
+              onChangeText={t => handleChange("id_number", t)}
             />
-            </View>
+          </View>
         </View>
 
-        {/* Visit Duration */}
+        {/* VISIT DURATION */}
         <View style={{ marginBottom: 16 }}>
-            <Text style={styles.label}>Visit Duration</Text>
-            <TextInput
+          <Text style={styles.label}>Visit Duration</Text>
+          <TextInput
             style={styles.input}
-            value={form.visitDuration}
-            onChange={handleEntryChange}
-            />
+            value={form.visit_duration}
+            onChangeText={t => handleChange("visit_duration", t)}
+          />
         </View>
 
-        {/* Purpose */}
+        {/* PURPOSE */}
         <View style={{ marginBottom: 16 }}>
-            <Text style={styles.label}>Purpose of Visit</Text>
-            <TextInput
+          <Text style={styles.label}>Purpose of Visit</Text>
+          <TextInput
             style={[styles.input, { height: 80 }]}
             multiline
             value={form.purpose}
-            onChangeText={(text) => handleChange("purpose", text)}
-            />
+            onChangeText={t => handleChange("purpose", t)}
+          />
         </View>
 
-        {/* Accompanying Persons */}
-        <Text style={[styles.label, { marginBottom: 8 }]}>Accompanying Persons</Text>
-        {accompanying.map((person, index) => (
-            <View key={index} style={styles.row}>
+        {/* ACCOMPANYING */}
+        <Text style={styles.label}>Accompanying Persons</Text>
+        {persons.map((p, i) => (
+          <View key={i} style={styles.row}>
             <TextInput
-                style={[styles.input, { flex: 1 }]}
-                placeholder="Name"
-                value={person.name}
-                onChangeText={(text) => handleAccompanyingChange(index, "name", text)}
+              style={[styles.input, { flex: 1 }]}
+              placeholder="Name"
+              value={p.first_name}
+              onChangeText={t => handleAccompanyingChange(i, "first_name", t)}
             />
             <TextInput
-                style={[styles.input, { flex: 1, marginLeft: 8 }]}
-                placeholder="Phone"
-                value={person.phone}
-                onChangeText={(text) => handleAccompanyingChange(index, "phone", text)}
+              style={[styles.input, { flex: 1, marginLeft: 8 }]}
+              placeholder="Phone"
+              value={p.phone}
+              onChangeText={t => handleAccompanyingChange(i, "phone", t)}
             />
-            {index > 0 && (
-                <TouchableOpacity
-                onPress={() => removeAccompanying(index)}
-                style={styles.removeButton}
-                >
+            {i > 0 && (
+              <TouchableOpacity onPress={() => removeAccompanying(i)} style={styles.removeButton}>
                 <Text style={{ color: "#fff" }}>X</Text>
-                </TouchableOpacity>
+              </TouchableOpacity>
             )}
-            </View>
+          </View>
         ))}
+
         <TouchableOpacity onPress={addAccompanying} style={styles.addButton}>
-            <Text style={{ color: "#fff" }}>Add More</Text>
+          <Text style={{ color: "#fff" }}>Add More</Text>
         </TouchableOpacity>
 
-        {/* Submit */}
+        {/* SUBMIT */}
         <TouchableOpacity onPress={handleSubmit} style={styles.submitButton}>
-            <Text style={{ color: "#000", fontWeight: "bold" }}>Save</Text>
+          <Text style={{ fontWeight: "bold" }}>Save</Text>
         </TouchableOpacity>
-        </ScrollView>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
+/* -------------------- STYLES -------------------- */
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f1f1f1",
-    padding: 16,
-  },
-  heading: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 16,
-    color: "#333",
-  },
-  row: {
-    flexDirection: "row",
-    marginBottom: 12,
-    alignItems: "center",
-  },
-  inputContainer: {
-    flex: 1,
-    marginRight: 8,
-  },
-  label: {
-    fontWeight: "600",
-    marginBottom: 4,
-    color: "#555",
-  },
+  container: { flex: 1, backgroundColor: "#f1f1f1", padding: 16 },
+  heading: { fontSize: 24, fontWeight: "bold", marginBottom: 16 },
+  row: { flexDirection: "row", marginBottom: 12 },
+  inputContainer: { flex: 1, marginRight: 8 },
+  label: { fontWeight: "600", marginBottom: 4 },
   input: {
     borderWidth: 1,
     borderColor: "#ccc",
@@ -280,7 +334,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: "center",
     marginBottom: 16,
-    width:80
+    width: 100,
   },
   removeButton: {
     backgroundColor: "#dc3545",
@@ -294,6 +348,6 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     alignItems: "center",
-    marginTop: 16,
+    marginTop: 24,
   },
 });
