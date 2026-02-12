@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Button, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "../../lib/api";
-import { Background } from "@react-navigation/elements";
 
 
 export default function TicketsList() {
@@ -46,7 +45,7 @@ export default function TicketsList() {
   return (
 
      <SafeAreaView style={{ flex: 1 }}>
-      <ScrollView style={styles.container}>
+      <View style={styles.container}>
         <Text style={styles.heading}>My Tickets</Text>
 
         {/* Table Header */}
@@ -77,29 +76,30 @@ export default function TicketsList() {
           </View>
         ))}
 
-        {/* Pagination */}
         <View style={styles.pagination}>
-          <TouchableOpacity
-            style={[styles.pageButton, page <= 1 && styles.disabledButton]}
-            disabled={page <= 1}
+            <TouchableOpacity
+            style={[styles.pageBtn, page === 1 && styles.disabled]}
+            disabled={page === 1}
             onPress={() => fetchTickets(page - 1)}
-          >
-            <Text style={styles.pageButtonText}>Prev</Text>
-          </TouchableOpacity>
+            >
+            <Text style={styles.pageText}>Previous</Text>
+            </TouchableOpacity>
 
-          <Text style={styles.pageInfo}>Page {page} / {lastPage}</Text>
+            <Text style={styles.pageInfo}>
+            Page {page} of {lastPage}
+            </Text>
 
-          <TouchableOpacity
-            style={[styles.pageButton, page >= lastPage && styles.disabledButton]}
-            disabled={page >= lastPage}
+            <TouchableOpacity
+            style={[styles.pageBtn, page === lastPage && styles.disabled]}
+            disabled={page === lastPage}
             onPress={() => fetchTickets(page + 1)}
-          >
-            <Text style={styles.pageButtonText}>Next</Text>
-          </TouchableOpacity>
+            >
+            <Text style={styles.pageText}>Next</Text>
+            </TouchableOpacity>
         </View>
 
 
-      </ScrollView>
+      </View>
     </SafeAreaView>
     
   );
@@ -113,6 +113,7 @@ const styles = StyleSheet.create({
     color: "#df1447",
   },
   container: {
+    flex: 1,
     padding: 10,
     backgroundColor: "#fff",
   },
@@ -145,38 +146,43 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
 
+
   pagination: {
-  flexDirection: "row",
-  justifyContent: "space-between",
-  alignItems: "center",
-  marginTop: 20,
-  paddingHorizontal: 20,
-},
-
-pageButton: {
-  backgroundColor: "#df1447",
-  paddingVertical: 8,
-  paddingHorizontal: 16,
-  borderRadius: 8,
-  shadowColor: "#000",
-  shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.3,
-  shadowRadius: 3,
-},
-
-disabledButton: {
-  backgroundColor: "#ccc",
-},
-
-pageButtonText: {
-  color: "#fff",
-  fontWeight: "bold",
-  fontSize: 16,
-},
-
-pageInfo: {
-  fontSize: 16,
-  fontWeight: "600",
-  color: "#333",
-},
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 12,
+    backgroundColor: "#FFFFFF",
+    borderTopWidth: 1,
+    borderTopColor: "#E5E7EB",
+  },
+  pageBtn: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: "#2563EB",
+    borderRadius: 6,
+  },
+  pageText: {
+    color: "#FFFFFF",
+    fontWeight: "600",
+    fontSize: 13,
+  },
+  pageInfo: {
+    fontSize: 13,
+    color: "#374151",
+    fontWeight: "500",
+  },
+  disabled: {
+    backgroundColor: "#9CA3AF",
+  },
+  emptyText: {
+    textAlign: "center",
+    marginTop: 40,
+    color: "#6B7280",
+    fontSize: 14,
+  },
 });

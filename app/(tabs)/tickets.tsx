@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, FlatList, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "../../lib/api";
+import { useRouter } from "expo-router";
 
 export default function TicketForm() {
   const priorityOptions = ["high", "low", "medium"];
@@ -11,6 +12,7 @@ export default function TicketForm() {
   const [description, setDescription] = useState("");
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   const handleSubmit = async () => {
     if (!subject || !description) {
@@ -112,9 +114,14 @@ export default function TicketForm() {
         />
 
         {/* Submit */}
-        <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-            <Text style={{ fontWeight: "bold", color: "#000" }}>Submit Ticket</Text>
-        </TouchableOpacity>
+            <View style={styles.buttonRow}>
+                <TouchableOpacity onPress={() => router.push('/ticketsList')} style={styles.listButton}>
+                  <Text style={{ fontWeight: "bold",color:'#fff' }}>View List</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
+                    <Text style={{ fontWeight: "bold", color: "#f8f6f6" }}>Submit Ticket</Text>
+                </TouchableOpacity>
+            </View>
         </View>
     </SafeAreaView>
   );
@@ -143,11 +150,10 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   submitButton: {
-    backgroundColor: "#FFD700",
+    backgroundColor: "#07ce60",
     padding: 16,
     borderRadius: 12,
     alignItems: "center",
-    marginTop: 16,
   },
   modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.3)" },
   modalContent: {
@@ -158,6 +164,20 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 12,
     padding: 12,
+  },
+  listButton: {
+    backgroundColor: "#1d84fa",
+    padding: 16,
+    borderRadius: 12,
+    alignItems: "center",
+    width: 100,
+  },
+   buttonRow: {
+    flexDirection: "row",
+    justifyContent: "center", // or "center", "space-around"
+    alignItems: "center",
+    gap: 12, // React Native 0.71+
+    marginTop: 16,
   },
   modalItem: { padding: 12, borderBottomWidth: 1, borderBottomColor: "#eee" },
 });

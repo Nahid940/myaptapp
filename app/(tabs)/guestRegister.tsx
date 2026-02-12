@@ -2,6 +2,8 @@ import DateTimePicker, {
   DateTimePickerAndroid,
 } from "@react-native-community/datetimepicker";
 import React, { useState } from "react";
+import { useRouter } from "expo-router";
+
 import {
   Alert,
   Platform,
@@ -29,6 +31,8 @@ export default function GuestVisitForm() {
     visit_duration: "",
     purpose: "",
   });
+
+  const router = useRouter();
 
   const handleChange = (field: string, value: string) => {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -117,8 +121,8 @@ export default function GuestVisitForm() {
 
       const payload = {
         ...form,
-        entryDate: entryDate ? entryDate.toISOString() : null,
-        exitDate: exitDate ? exitDate.toISOString() : null,
+        entryDate: entryDate?.toISOString(),
+        exitDate: exitDate?.toISOString(),
         persons: persons.filter(p => p.name || p.phone),
       };
 
@@ -126,7 +130,7 @@ export default function GuestVisitForm() {
 
       if (response?.data?.status === "success") {
         Alert.alert("Success", "Guest visit registered successfully!");
-
+        console.log(entryDate.toISOString());
         setForm({
           first_name: "",
           last_name: "",
@@ -301,13 +305,18 @@ export default function GuestVisitForm() {
         ))}
 
         <TouchableOpacity onPress={addAccompanying} style={styles.addButton}>
-          <Text style={{ color: "#fff" }}>Add More</Text>
+          <Text style={{ color: "#fff" }}>+</Text>
         </TouchableOpacity>
 
         {/* SUBMIT */}
-        <TouchableOpacity onPress={handleSubmit} style={styles.submitButton}>
-          <Text style={{ fontWeight: "bold" }}>Save</Text>
-        </TouchableOpacity>
+        <View style={styles.buttonRow}>
+          <TouchableOpacity  onPress={() => router.push('/guests')} style={styles.listButton}>
+            <Text style={{ fontWeight: "bold",color:'#fff' }}>View List</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleSubmit} style={styles.submitButton}>
+            <Text style={{ fontWeight: "bold",color:'#fff' }}>Save</Text>
+          </TouchableOpacity>
+      </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -344,10 +353,26 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   submitButton: {
-    backgroundColor: "#FFD700",
+    backgroundColor: "#0ac56e",
     padding: 16,
     borderRadius: 12,
     alignItems: "center",
     marginTop: 24,
+    width: 100,
+  },
+  listButton: {
+    backgroundColor: "#1d84fa",
+    padding: 16,
+    borderRadius: 12,
+    alignItems: "center",
+    marginTop: 24,
+    width: 100,
+  },
+   buttonRow: {
+    flexDirection: "row",
+    justifyContent: "center", // or "center", "space-around"
+    alignItems: "center",
+    gap: 12, // React Native 0.71+
+    marginTop: 16,
   },
 });
