@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "../../lib/api";
-
+import { useRouter } from "expo-router";
+import { Ionicons } from '@expo/vector-icons';
 
 export default function PaymentsList() {
 
@@ -11,6 +12,7 @@ export default function PaymentsList() {
   const [page, setPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
   const [fromPage, setFromPage] = useState(1);
+  const router = useRouter();
     const fetchTickets = async (pageNumber = 1) => {
     setLoading(true);
     try {
@@ -35,14 +37,22 @@ export default function PaymentsList() {
 
      <SafeAreaView style={{ flex: 1 }}>
       <ScrollView style={styles.container}>
-        <Text style={styles.heading}>My Payments</Text>
+
+
+        <View style={styles.navbar}>
+          <TouchableOpacity>
+            <Ionicons name="arrow-back" size={24} color="#1e293b" onPress = {() => router.push('/home')} />
+          </TouchableOpacity>
+          <Text style={styles.navTitle}>My Payments</Text>
+        </View>
 
         {/* Table Header */}
         <View style={[styles.row, styles.header]}>
           <Text style={[styles.cell, styles.headerText]}>Sl</Text>
           <Text style={[styles.cell, styles.headerText]}>Month</Text>
           <Text style={[styles.cell, styles.headerText]}>Year</Text>
-          <Text style={[styles.cell, styles.headerText]}>Amount</Text>
+          <Text style={[styles.cell, styles.headerText]}>Total</Text>
+          <Text style={[styles.cell, styles.headerText]}>Paid</Text>
           <Text style={[styles.cell, styles.headerText]}>Date</Text>
           <Text style={[styles.cell, styles.headerText]}>Action</Text>
         </View>
@@ -52,16 +62,19 @@ export default function PaymentsList() {
 
         {/* Table Rows */}
         {payments.map((item: any, index: number) => (
-          <View key={item.id} style={styles.row}>
-            <Text style={styles.cell}>
-            {fromPage + index}
-          </Text>
-            <Text style={styles.cell}>{item.payment_month}</Text>
-            <Text style={styles.cell}>{item.payment_year}</Text>
-            <Text style={styles.cell}>{item.total_paid}</Text>
-            <Text style={styles.cell}>{item.created_at}</Text>
-            <Text style={styles.cell}>-</Text>
-          </View>
+          <Pressable key={item.id} onPress={() => router.push('/payment')}>
+            <View key={item.id} style={styles.row}>
+              <Text style={styles.cell}>
+              {fromPage + index}
+            </Text>
+              <Text style={styles.cell}>{item.payment_month}</Text>
+              <Text style={styles.cell}>{item.payment_year}</Text>
+              <Text style={styles.cell}>{item.total_payable}</Text>
+              <Text style={styles.cell}>{item.total_paid}</Text>
+              <Text style={styles.cell}>{item.created_at}</Text>
+              <Text style={styles.cell}>-</Text>
+            </View>
+          </Pressable>
         ))}
 
         {/* Pagination */}
@@ -102,6 +115,13 @@ const styles = StyleSheet.create({
   container: {
     padding: 10,
     backgroundColor: "#fff",
+  },
+   navbar: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    paddingHorizontal: 5,
+    paddingVertical: 5,
   },
   row: {
     flexDirection: "row",
@@ -150,6 +170,8 @@ pageButton: {
   shadowOpacity: 0.3,
   shadowRadius: 3,
 },
+
+navTitle: { fontSize: 18, fontWeight: '700', color: '#1e293b' },
 
 disabledButton: {
   backgroundColor: "#ccc",

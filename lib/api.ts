@@ -69,4 +69,4 @@ class ApiService {
   }
 }
 
-export const api = new ApiService("https://myapartment.mnptechs.com/api/v1");
+export const api = new ApiService("https://alamana.residoo.net/api/v1");

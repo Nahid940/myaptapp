@@ -1,13 +1,37 @@
-import { View, Text, ScrollView, useColorScheme, StyleSheet, TouchableOpacity, Pressable } from "react-native";
+import { View, Text, ScrollView, useColorScheme, StyleSheet, TouchableOpacity, Pressable,  } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 // import LinearGradient from "react-native-linear-gradient";
 import HomePageIcons from "@/components/ui/homepageIcons";
 import { useRouter } from "expo-router";
+import { api } from "../../lib/api";
+
+import { useState, useEffect }  from 'react';
 
 export default function HomeScreen() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === "dark";
   const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState(null);
+
+  const fetchDashboardData = async () => {
+    setLoading(true);
+    try {
+      const response = await api.get(`/home`);
+      setData(response.data);
+      console.log(response.data)
+    } catch (err) {
+      console.error("Error fetching payments:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <ScrollView style={[styles.container, isDark ? styles.bgLight : styles.bgLight]}>
@@ -31,21 +55,21 @@ export default function HomeScreen() {
       >
         <View style={styles.topCardLeft}>
           <Text style={[styles.boldText, { color: "#fff", fontSize: 20 }]}>
-            Hello, John
+            Hello, {data.tenant.first_name} {data.tenant.last_name}
           </Text>
           <View style={styles.line} />
           <Text style={[styles.boldText, { color: "#fff", fontSize: 20 }]}>
-            Building: Tower A
+            Building: {data.booking.building.building_name}
           </Text>
-          <Text style={{ color: "#fff" }}>Apartment Code: A-101</Text>
-          <Text style={{ color: "#fff" }}>Booking ID: 12345</Text>
+          <Text style={{ color: "#fff" }}>Apartment Code: {data.booking.apartment.apartment_code}</Text>
+          <Text style={{ color: "#fff" }}>Lease #: {data.booking.booking_code}</Text>
           <View style={styles.line} />
-          <Text style={[styles.boldText, { color: "#fff" }]}>Monthly Rent: $500</Text>
-          <Text style={{ color: "#fff",  }}>Service Charge: $50</Text>
+          <Text style={[styles.boldText, { color: "#fff" }]}>Monthly Rent: {data.booking.rent}</Text>
+          <Text style={{ color: "#fff",  }}>Service Charge: {data.booking.service_charge}</Text>
         </View>
         <View style={styles.topCardRight}>
-            <Text style={{ color: "#fff" }}>Start Date: January 20, 2027</Text>
-            <Text style={{ color: "#fff" }}>End Date: January 20, 2027</Text>
+            <Text style={{ color: "#fff" }}>Start Date: {data.booking.checkin_at}</Text>
+            <Text style={{ color: "#fff" }}>End Date: {data.booking.end_date}</Text>
             <TouchableOpacity style={styles.paymentButtonCircle}>
               <Pressable onPress={() => router.push('/payments')}>
                 <Text style={styles.paymentButtonCircleText}>Payments</Text>
@@ -59,11 +83,11 @@ export default function HomeScreen() {
           {/* Row 1 */}
           <View style={[styles.bottomCard, styles.paidCard]}>
             <Text style={styles.cardTitle}>Total Paid</Text>
-            <Text style={styles.cardValue}>300</Text>
+            <Text style={styles.cardValue}>{data.total_paid}</Text>
           </View>
           <View style={[styles.bottomCard, styles.dueCard]}>
             <Text style={styles.cardTitle}>Remaining Due</Text>
-            <Text style={styles.cardValue}>400</Text>
+            <Text style={styles.cardValue}>{data.due}</Text>
           </View>
 
           {/* Row 3 */}

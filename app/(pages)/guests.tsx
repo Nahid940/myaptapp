@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { api } from "../../lib/api";
+import { Background } from "@react-navigation/elements";
 export default function VisitorListScreen() {
   const [data, setData] = useState([]);
   const [page, setPage] = useState(1);
@@ -24,26 +25,26 @@ export default function VisitorListScreen() {
 
     try {
     const response = await api.get(`/visits?page=${page}`);
-        setData(response.data);
-        //setLastPage(response.data.last_page);
-        //setLastPage(response.pagination.last_page);
+        setData(response.data.data);
+        setLastPage(response.data.last_page);
+        setPage(response.data.current_page);
     } catch (err) {
         console.error("Error fetching tickets:", err);
     } finally {
         setLoading(false);
     }
-
-    
     setLoading(false);
   };
 
   const renderItem = ({ item }) => (
     <View style={styles.card}>
       <Text style={styles.cardTitle}>
-        {item.first_name} {item.last_name}
+        Name: {item.guest.first_name} {item.guest.last_name}
       </Text>
 
-      <View style={styles.row}><Text style={styles.label}>Phone</Text><Text style={styles.value}>{item.phone}</Text></View>
+      <View style={[styles.row, styles.entry_time]}><Text style={styles.label}>Entry Time</Text><Text style={styles.value}>{item.entry_time}</Text></View>
+      <View style={[styles.row, styles.exit_time]}><Text style={styles.label}>Exit Time</Text><Text style={styles.value}>{item.exit_time}</Text></View>
+      <View style={styles.row}><Text style={styles.label}>Phone</Text><Text style={styles.value}>{item.guest.phone}</Text></View>
       <View style={styles.row}><Text style={styles.label}>Apartment / Unit</Text><Text style={styles.value}>{item.apartment} - {item.unit}</Text></View>
       <View style={styles.row}><Text style={styles.label}>Vehicle No</Text><Text style={styles.value}>{item.vehicle_number}</Text></View>
       <View style={styles.row}><Text style={styles.label}>ID Number</Text><Text style={styles.value}>{item.id_number}</Text></View>
@@ -55,7 +56,7 @@ export default function VisitorListScreen() {
   return (
     <SafeAreaView style={{ flex: 1 }}>
         <View style={styles.container}>
-        <Text style={styles.header}>Visitor Records</Text>
+        <Text style={styles.header}>My Guests</Text>
 
         {loading ? (
             <ActivityIndicator size="large" color="#2563EB" />
@@ -111,7 +112,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   card: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#f8e2f5",
     borderRadius: 10,
     padding: 14,
     marginBottom: 14,
@@ -183,6 +184,12 @@ const styles = StyleSheet.create({
     marginTop: 40,
     color: "#6B7280",
     fontSize: 14,
+  },
+  entry_time :{
+    backgroundColor : "#76fab8"
+  },
+ exit_time :{
+    backgroundColor : "#ff8d85"
   },
 });
 
