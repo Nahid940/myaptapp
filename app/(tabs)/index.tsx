@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, useColorScheme, StyleSheet, TouchableOpacity, Pressable,  } from "react-native";
+import { View, Text, ScrollView, useColorScheme, StyleSheet, TouchableOpacity, Pressable,  ActivityIndicator} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 // import LinearGradient from "react-native-linear-gradient";
 import HomePageIcons from "@/components/ui/homepageIcons";
@@ -19,9 +19,9 @@ export default function HomeScreen() {
     try {
       const response = await api.get(`/home`);
       setData(response.data);
-      console.log(response.data)
+      // console.log(response.data)
     } catch (err) {
-      console.error("Error fetching payments:", err);
+      // console.error("Error fetching payments:", err);
     } finally {
       setLoading(false);
     }
@@ -30,6 +30,23 @@ export default function HomeScreen() {
   useEffect(() => {
     fetchDashboardData();
   }, []);
+
+
+  if (!data) {
+    return (
+      <SafeAreaView style={{ flex: 1 }}>
+        <View
+          style={{
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <ActivityIndicator size="large" />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
 
   return (
@@ -70,11 +87,6 @@ export default function HomeScreen() {
         <View style={styles.topCardRight}>
             <Text style={{ color: "#fff" }}>Start Date: {data.booking.checkin_at}</Text>
             <Text style={{ color: "#fff" }}>End Date: {data.booking.end_date}</Text>
-            <TouchableOpacity style={styles.paymentButtonCircle}>
-              <Pressable onPress={() => router.push('/payments')}>
-                <Text style={styles.paymentButtonCircleText}>Payments</Text>
-              </Pressable>
-            </TouchableOpacity>
         </View>
       </View>
         <HomePageIcons/>
@@ -86,18 +98,8 @@ export default function HomeScreen() {
             <Text style={styles.cardValue}>{data.total_paid}</Text>
           </View>
           <View style={[styles.bottomCard, styles.dueCard]}>
-            <Text style={styles.cardTitle}>Remaining Due</Text>
+            <Text style={styles.cardTitle}>Due</Text>
             <Text style={styles.cardValue}>{data.due}</Text>
-          </View>
-
-          {/* Row 3 */}
-          <View style={[styles.bottomCard, isDark ? styles.cardDark : styles.cardLight]}>
-            <Text style={[styles.boldText, isDark ? styles.textLight : styles.textDark]}>Extra 1</Text>
-            <Text style={[styles.cardValue, isDark ? styles.textLight : styles.textDark]}>Value 1</Text>
-          </View>
-          <View style={[styles.bottomCard, isDark ? styles.cardDark : styles.cardLight]}>
-            <Text style={[styles.boldText, isDark ? styles.textLight : styles.textDark]}>Extra 2</Text>
-            <Text style={[styles.cardValue, isDark ? styles.textLight : styles.textDark]}>Value 2</Text>
           </View>
         </View>
       </ScrollView>
@@ -203,10 +205,10 @@ paymentButtonCircleText: {
   },
 
   paidCard: {
-    backgroundColor: "#67d67f",
+    backgroundColor: "#159df8",
   },
   dueCard: {
-    backgroundColor: "#f33a68",
+    backgroundColor: "#159df8",
   },
 
   cardTitle: {

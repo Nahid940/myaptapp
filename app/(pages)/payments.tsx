@@ -41,7 +41,7 @@ export default function PaymentsList() {
 
         <View style={styles.navbar}>
           <TouchableOpacity>
-            <Ionicons name="arrow-back" size={24} color="#1e293b" onPress = {() => router.push('/home')} />
+            <Ionicons name="arrow-back" size={24} color="#1e293b" onPress = {() => router.push('/(tabs)')} />
           </TouchableOpacity>
           <Text style={styles.navTitle}>My Payments</Text>
         </View>

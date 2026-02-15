@@ -69,14 +69,14 @@ const styles = StyleSheet.create({
   },
 
   headerText: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "700",
     color: "#fff",
   },
 
   cell: {
-    fontSize: 16,
-    paddingHorizontal: 8,
+    fontSize: 14,
+    paddingHorizontal: 3,
   },
 
   rowEven: {

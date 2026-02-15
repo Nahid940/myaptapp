@@ -46,7 +46,7 @@ export default function LoginPage() {
 
       if (response?.token) {
         await login(response.token);
-        router.replace("(tabs)/home");
+        router.replace("/(tabs)");
       } else {
         Alert.alert("Login Failed", response?.message || "Invalid credentials");
       }

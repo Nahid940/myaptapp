@@ -49,10 +49,17 @@ export default function AccountScreen() {
         </View>
       </View>
 
-      {/* Logout Button */}
-      <Pressable style={styles.logoutButton} onPress={handleLogout}>
-        <Text style={styles.logoutText}>Logout</Text>
-      </Pressable>
+      <View style={styles.buttonContainer}>
+        {/* Logout Button */}
+        <Pressable style={[styles.button, styles.logoutButton]} onPress={handleLogout}>
+          <Text style={styles.buttonText}>Logout</Text>
+        </Pressable>
+
+        {/* Update Password Button */}
+        <Pressable style={[styles.button, styles.updateButton]} onPress = {() => router.push('/password')}>
+          <Text style={styles.buttonText}>Update Password</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -99,10 +106,35 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#555",
   },
+
+  buttonContainer: {
+    flexDirection: 'row',       // Side by side
+    justifyContent: 'space-between', // Space between buttons
+    marginVertical: 20,
+    paddingHorizontal: 20,
+  },
+
+  button: {
+    flex: 1,                    // Make buttons same width
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginHorizontal: 5,        // Small space between buttons
+  },
+
+  updateButton: {
+    backgroundColor: '#007AFF', // Blue
+  },
+  buttonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+
   logoutButton: {
     paddingVertical: 15,
     borderRadius: 10,
-    backgroundColor: "#4A90E2",
+    backgroundColor: "#f1126f",
     alignItems: "center",
     shadowColor: "#000",
     shadowOpacity: 0.1,

@@ -12,6 +12,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  authToken : string;
   login: (token: string) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -21,7 +22,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-
+  const [authToken, setAuthToken] = useState<string>("");
   // Load user on app start
   useEffect(() => {
     const loadUser = async () => {
@@ -31,8 +32,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       try {
         const res = await api.get("/me", token);
         setUser({ ...res, token });
+        setAuthToken(token);
       } catch (err) {
-        console.log("Failed to fetch /me:", err);
+        // console.log("Failed to fetch /me:", err);
         await SecureStore.deleteItemAsync("token");
       } finally {
         setLoading(false);
@@ -46,6 +48,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       await SecureStore.setItemAsync("token", token);
       const res = await api.get("/me", token);
       setUser({ ...res, token });
+      setAuthToken(token);
     } catch (err) {
       console.log("Login failed:", err);
       await SecureStore.deleteItemAsync("token");
@@ -60,7 +63,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, authToken, loading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
