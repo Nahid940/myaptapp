@@ -9,9 +9,11 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
+      "bundleIdentifier": "com.mnptechs.residoo",
       "supportsTablet": true
     },
     "android": {
+      "package": "com.mnptechs.residoo",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -44,6 +46,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "b475d4ef-0053-4fa6-ab4e-8a7b9105b081"
+      }
+    },
+    "owner": "nahid940"
   }
 }

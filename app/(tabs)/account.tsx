@@ -3,15 +3,24 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { Alert, Pressable, StyleSheet, Text, useColorScheme, View } from "react-native";
 import { useAuth } from "../../context/AuthContext";
+import { useEffect, useState } from "react";
+import { api } from "@/lib/api";
 
 export default function AccountScreen() {
-  const { user, logout } = useAuth();
+  const { logout } = useAuth();
   const router = useRouter();
   const colorScheme = useColorScheme() ?? "light";
   const theme = Colors[colorScheme];
 
+  const [info, setInfo]  = useState()
+
+  const getTenantInfo = async () =>{
+    const response = await api.get('/info')
+    setInfo(response.data)
+  }
+
   const handleLogout = () => {
-    Alert.alert("Logout", "Are you sure you want to logout?", [
+    Alert.alert("Logout", "Are you sure, you want to logout?", [
       { text: "Cancel", style: "cancel" },
       {
         text: "Logout",
@@ -24,28 +33,52 @@ export default function AccountScreen() {
     ]);
   };
 
+  useEffect(()=>{
+    getTenantInfo()
+  }, [])
+
   return (
     <View style={styles.container}>
       
       {/* Header */}
       <View style={styles.header}>
         <Ionicons name="person-circle-outline" size={80} color="#4A90E2" />
-        <Text style={styles.headerText}>Welcome, {user?.name}</Text>
+        <Text style={styles.headerText}>Welcome, {info?.first_name}</Text>
       </View>
 
       {/* Info Card */}
       <View style={styles.card}>
         <View style={styles.infoRow}>
           <Text style={styles.label}>Name:</Text>
-          <Text style={styles.value}>{user?.name}</Text>
+          <Text style={styles.value}>{info?.first_name}</Text>
         </View>
         <View style={styles.infoRow}>
           <Text style={styles.label}>Email:</Text>
-          <Text style={styles.value}>{user?.email}</Text>
+          <Text style={styles.value}>{info?.email}</Text>
         </View>
         <View style={styles.infoRow}>
-          <Text style={styles.label}>ID:</Text>
-          <Text style={styles.value}>{user?.id}</Text>
+          <Text style={styles.label}>Phone:</Text>
+          <Text style={styles.value}>{info?.phone}</Text>
+        </View>
+        <View style={styles.infoRow}>
+          <Text style={styles.label}>Gender:</Text>
+          <Text style={styles.value}>{info?.gender}</Text>
+        </View>
+        <View style={styles.infoRow}>
+          <Text style={styles.label}>Emergency Contact Name:</Text>
+          <Text style={styles.value}>{info?.emergency_contact_name}</Text>
+        </View>
+        <View style={styles.infoRow}>
+          <Text style={styles.label}>Emergency Contact:</Text>
+          <Text style={styles.value}>{info?.emergency_contact}</Text>
+        </View>
+        <View style={styles.infoRow}>
+          <Text style={styles.label}>Gender:</Text>
+          <Text style={styles.value}>{info?.gender}</Text>
+        </View>
+        <View style={styles.infoRow}>
+          <Text style={styles.label}>DOJ:</Text>
+          <Text style={styles.value}>{info?.created_at}</Text>
         </View>
       </View>
 
@@ -116,7 +149,7 @@ const styles = StyleSheet.create({
 
   button: {
     flex: 1,                    // Make buttons same width
-    paddingVertical: 12,
+    paddingVertical: 15,
     borderRadius: 8,
     alignItems: 'center',
     marginHorizontal: 5,        // Small space between buttons
@@ -128,7 +161,7 @@ const styles = StyleSheet.create({
   buttonText: {
     color: '#fff',
     fontWeight: 'bold',
-    fontSize: 16,
+    fontSize: 18,
   },
 
   logoutButton: {
@@ -140,7 +173,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 5 },
     shadowRadius: 10,
-    elevation: 5,
   },
   logoutText: {
     color: "#fff",

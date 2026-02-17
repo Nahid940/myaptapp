@@ -17,10 +17,7 @@ export default function RootLayout() {
       <ThemeProvider value={colorScheme === 'dark' ? DefaultTheme : DefaultTheme}>
         <AuthProvider>
           <StatusBar hidden={false} style={"dark"}/>
-            <Stack screenOptions={{ headerShown: false }}>
-              {/* <Stack.Screen name="/(protected)/(tabs)" /> */}
-              <Stack screenOptions={{ headerShown: false }} />
-            </Stack>
+            <Stack screenOptions={{ headerShown: false }}></Stack>
         </AuthProvider>
       </ThemeProvider>
       </SafeAreaProvider>

@@ -4,6 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "../../lib/api";
 import { useRouter } from "expo-router";
 import { Ionicons } from '@expo/vector-icons';
+import StatusCell from "@/components/ui/status";
 
 export default function PaymentsList() {
 
@@ -13,7 +14,7 @@ export default function PaymentsList() {
   const [lastPage, setLastPage] = useState(1);
   const [fromPage, setFromPage] = useState(1);
   const router = useRouter();
-    const fetchTickets = async (pageNumber = 1) => {
+  const fetchTickets = async (pageNumber = 1) => {
     setLoading(true);
     try {
       const response = await api.get(`/payments?page=${pageNumber}`);
@@ -51,10 +52,8 @@ export default function PaymentsList() {
           <Text style={[styles.cell, styles.headerText]}>Sl</Text>
           <Text style={[styles.cell, styles.headerText]}>Month</Text>
           <Text style={[styles.cell, styles.headerText]}>Year</Text>
-          <Text style={[styles.cell, styles.headerText]}>Total</Text>
           <Text style={[styles.cell, styles.headerText]}>Paid</Text>
           <Text style={[styles.cell, styles.headerText]}>Date</Text>
-          <Text style={[styles.cell, styles.headerText]}>Action</Text>
         </View>
 
         {/* Loading */}
@@ -62,17 +61,15 @@ export default function PaymentsList() {
 
         {/* Table Rows */}
         {payments.map((item: any, index: number) => (
-          <Pressable key={item.id} onPress={() => router.push('/payment')}>
+          <Pressable key={item.id} onPress={() => router.push(`/payment/${item.id}`)}>
             <View key={item.id} style={styles.row}>
               <Text style={styles.cell}>
               {fromPage + index}
             </Text>
               <Text style={styles.cell}>{item.payment_month}</Text>
               <Text style={styles.cell}>{item.payment_year}</Text>
-              <Text style={styles.cell}>{item.total_payable}</Text>
               <Text style={styles.cell}>{item.total_paid}</Text>
               <Text style={styles.cell}>{item.created_at}</Text>
-              <Text style={styles.cell}>-</Text>
             </View>
           </Pressable>
         ))}

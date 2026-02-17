@@ -1,32 +1,66 @@
-import { View, Text, StyleSheet, ScrollView } from "react-native";
+import React, { useEffect, useState } from "react";
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-const tickets = [
-  { id: 1, subject: "Login Issue", priority: "High", description: "Cannot login to app", status: "sloved" },
-  { id: 2, subject: "Payment Failed", priority: "Medium", description: "Card payment failed", status: "pending" },
-  { id: 3, subject: "UI Bug", priority: "Low", description: "Button alignment issue", status: "pensing" },
-];
+import { api } from "@/lib/api";
 
-export default function TicketsList() {
+export default function AlertsList() {
+  const [alerts, setAlerts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch alerts from API
+  const fetchAlerts = async () => {
+    try {
+      const res = await api.get("/alerts");
+      setAlerts(res.data); // assumes API returns array of alerts
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAlerts();
+  }, []);
+
+  // Function to get color based on alert type
+  const getCardStyle = (type: string) => {
+    switch (type) {
+      case "emergency":
+        return { borderLeftColor: "red" };
+      case "info":
+        return { borderLeftColor: "blue" };
+      case "maintenance":
+        return { borderLeftColor: "orange" };
+      default:
+        return { borderLeftColor: "#ccc" };
+    }
+  };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" color="#df1447" />
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={{ flex: 1 }}>
-        <ScrollView style={styles.container}>
-        {/* Table Header */}
+      <ScrollView style={styles.container}>
         <Text style={styles.heading}>Alerts</Text>
-        <View style={[styles.row, styles.header]}>
-            <Text style={[styles.cell, styles.headerText]}>Title</Text>
-            <Text style={[styles.cell, styles.headerText]}>Description</Text>
-            <Text style={[styles.cell, styles.headerText]}>Action</Text>
-        </View>
 
-        {/* Table Rows */}
-        {tickets.map((item) => (
-            <View key={item.id} style={styles.row}>
-            <Text style={styles.cell}>{item.subject}</Text>
-            <Text style={styles.cell}>{item.description}</Text>
-            <Text style={styles.cell}>-</Text>
-            </View>
+        {alerts.map((alert) => (
+          <View key={alert.id} style={[styles.card, getCardStyle(alert.type)]}>
+            <Text style={styles.title}>{alert.title}</Text>
+            <Text style={styles.title}>{alert.created_at}</Text>
+            <Text style={styles.message}>{alert.message}</Text>
+            <Text style={[styles.type, { color: getCardStyle(alert.type).borderLeftColor }]}>
+              {alert.type.toUpperCase()}
+            </Text>
+          </View>
         ))}
-        </ScrollView>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -36,38 +70,39 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "bold",
     marginBottom: 16,
+    marginLeft: 10,
     color: "#df1447",
   },
   container: {
     padding: 10,
+    backgroundColor: "#f9f9f9",
+  },
+  card: {
     backgroundColor: "#fff",
+    padding: 15,
+    marginBottom: 12,
+    borderRadius: 8,
+    borderLeftWidth: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  row: {
-    flexDirection: "row",
-    borderBottomWidth: 1,
-    borderColor: "#ddd",
-    paddingVertical: 10,
+  title: {
+    fontSize: 16,
+    fontWeight: "bold",
+    marginBottom: 5,
+    color: "#333",
   },
-  header: {
-    backgroundColor: "#f5f5f5",
-  },
-  cell: {
-    flex: 1,
+  message: {
     fontSize: 14,
+    color: "#555",
+    marginBottom: 10,
   },
-  headerText: {
+  type: {
+    fontSize: 12,
     fontWeight: "bold",
-  },
-  high: {
-    color: "red",
-    fontWeight: "bold",
-  },
-  medium: {
-    color: "orange",
-    fontWeight: "bold",
-  },
-  low: {
-    color: "green",
-    fontWeight: "bold",
+    alignSelf: "flex-end",
   },
 });

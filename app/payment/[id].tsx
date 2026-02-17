@@ -1,22 +1,52 @@
-import React from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, ScrollView, Share } from 'react-native';
+import React,{ useEffect, useState } from 'react';
+import { StyleSheet, View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 // Built-in Expo Icons
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useRouter } from "expo-router";
-
+import { useRouter, useLocalSearchParams  } from "expo-router";
+import { api } from '@/lib/api';
 export default function PaymentDetails() {
-  
-  const onShare = async () => {
+  const router = useRouter();
+
+  const [payment, setPayment] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  const params = useLocalSearchParams<{ id: string }>();
+  const paymentId = params.id;
+
+  const fetchPayment = async () => {
+    setLoading(true);
     try {
-      await Share.share({
-        message: 'Payment Successful: $30.50 for Pro Subscription. Ref: #TRX-99281',
-      });
-    } catch (error) {
-      //console.log(error.message);
+      const response = await api.get(`/payments/${paymentId}`);
+      setPayment(response.data);
+    } catch (err) {
+      console.error("Error fetching payments:", err);
+    } finally {
+      setLoading(false);
     }
   };
-  const router = useRouter();
+
+  useEffect(()=>{
+    fetchPayment()
+  }, [])
+
+
+  if (!payment) {
+      return (
+        <SafeAreaView style={{ flex: 1 }}>
+          <View
+            style={{
+              flex: 1,
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <ActivityIndicator size="large" />
+          </View>
+        </SafeAreaView>
+      );
+    }
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
@@ -34,23 +64,23 @@ export default function PaymentDetails() {
             <Ionicons name="checkmark-circle" size={50} color="#10b981" />
           </View>
           <Text style={styles.statusText}>Payment Success!</Text>
-          <Text style={styles.amountText}>300.50</Text>
-          <Text style={styles.dateText}>Feb 13, 2026 • 08:09 PM</Text>
+          <Text style={styles.amountText}>{payment.amount}</Text>
         </View>
 
         {/* Transaction Info Card */}
         <View style={styles.detailsCard}>
           <Text style={styles.cardHeader}>Transaction Details</Text>
-          
-          <DetailRow label="Reference ID" value="#TRX-99281" />
-          <DetailRow label="Payment Method" value="•••• 4242" isCard />
-          <DetailRow label="Billing Name" value="Alex Johnson" />
+          <DetailRow label="Payment Month" value={payment.payment_month} />
+          <DetailRow label="Payment Year" value={payment.payment_year} />
+          <DetailRow label="Payment Date" value={payment.created_at_details} />
+          <DetailRow label="Reference" value={payment.reference} />
+          <DetailRow label="Payment Method" value={payment.payment_method} isCard />
+          <DetailRow label="Remarks" value={payment.remarks} />
           
           <View style={styles.divider} />
           
-          <DetailRow label="Subtotal" value="$29.00" />
-          <DetailRow label="Tax (5%)" value="$1.50" />
-          <DetailRow label="Total Amount" value="$30.50" isBold />
+          <DetailRow label="Subtotal" value={payment.amount} />
+          <DetailRow label="Total Amount" value={payment.amount} isBold />
         </View>
 
         {/* Footer Actions */}

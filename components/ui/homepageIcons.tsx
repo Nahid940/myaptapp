@@ -5,16 +5,18 @@ import { useRouter } from "expo-router";
 export default function HomePageIcons() {
   const items1 = [
     { title: "Payments", icon: "wallet", color: "#4facfe", route:"/payments" },
-    { title: "Tickets", icon: "ticket", color: "#f02005", count: 3, route:"/ticketsList" },
-    { title: "Notices", icon: "list", color: "#43e97b",count: 3, route:"/notices"  },
-    { title: "Message", icon: "chatbubble", color: "#6e36f1", count: 0, route:"/messages"  },
+    { title: "Tickets", icon: "ticket", color: "#f02005", count: 0, route:"/ticketsList" },
+    { title: "Notices", icon: "list", color: "#43e97b",count: 0, route:"/notices"  },
+    { title: "Guests Book", icon: "person", color: "#fc640d", route:"/guests"  },
   ];
   const items = [
+    { title: "Message", icon: "chatbubble", color: "#6e36f1", count: 0, route:"/messages"  },
     
-    { title: "Guests Book", icon: "person", color: "#43e97b", route:"/guests"  },
-    { title: "Alert", icon: "alert-circle", color: "#f7971e", count: 0, route:"/alerts"  },
     { title: "Help Center", icon: "alert-circle", color: "#fc36a3", count: 0, route:"/help"  },
+    { title: "Alert", icon: "alert-circle", color: "#f7971e", count: 0, route:"/alerts"  },
   ];
+
+
   const router = useRouter();
   return (
     <>
@@ -35,6 +37,7 @@ export default function HomePageIcons() {
           </TouchableOpacity>
         ))}
       </View>
+
       <View style={styles.row}>
         {items.map((item, index) => (
           <TouchableOpacity key={index} style={styles.item}>
@@ -59,18 +62,19 @@ export default function HomePageIcons() {
 const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    marginVertical: 15,
+    justifyContent: "flex-start", 
+    marginVertical: 10,
     paddingHorizontal: 0,
   },
   item: {
     alignItems: "center",
-    flex: 1,
+    marginRight: 15,
+
   },
   iconContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 16,
+    width: 80,
+    height: 80,
+    borderRadius: 10,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 8,

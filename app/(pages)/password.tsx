@@ -97,16 +97,6 @@ const { user, logout } = useAuth();
   );
 }
 
-// Fake API call (replace with your backend)
-const fakeApiUpdatePassword = (current: string, newPass: string) => {
-  return new Promise<void>((resolve, reject) => {
-    setTimeout(() => {
-      if (current === "wrong") reject(new Error("Current password incorrect"));
-      else resolve();
-    }, 1500);
-  });
-};
-
 const styles = StyleSheet.create({
   container: {
     padding: 20,

@@ -114,7 +114,7 @@ export default function LoginPage() {
                 {loading ? "Loading..." : "Login"}
             </Text>
          </Pressable>
-          <Text style={{ textAlign: 'center', color: "#f7f7f7", fontSize: 12, fontWeight: "bold",marginTop:10 }}>
+          <Text style={{ textAlign: 'center', color: "#6e6c6c", fontSize: 12, fontWeight: "bold",marginTop:10 }}>
               Residoo - Developed By MNP Techs.
           </Text>
         </KeyboardAvoidingView>
@@ -128,7 +128,7 @@ export default function LoginPage() {
 const styles = StyleSheet.create({
     safe: {
         flex: 1,
-        backgroundColor: "rgb(163, 199, 240)",
+        backgroundColor: "rgb(246, 248, 250)",
     },
     container: {
         flex: 1,
@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
     },
     input: {
         borderWidth: 1,
-        borderColor: "#e0e0e0",
+        borderColor: "#181717af",
         borderRadius: 8,
         padding: 12,
         marginBottom: 20,
@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
         marginTop: 0,
         fontSize: 14,
     },
-    
+
     errorGeneral: {
         color: "red",
         textAlign: "center",
