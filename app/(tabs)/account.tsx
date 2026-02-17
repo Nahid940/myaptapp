@@ -1,8 +1,8 @@
-import { View, Text, Button, StyleSheet, Alert, useColorScheme, Pressable } from "react-native";
-import { useAuth } from "../../context/AuthContext";
-import { useRouter } from "expo-router";
 import { Colors } from "@/constants/theme"; // optional shared theme
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import { Alert, Pressable, StyleSheet, Text, useColorScheme, View } from "react-native";
+import { useAuth } from "../../context/AuthContext";
 
 export default function AccountScreen() {
   const { user, logout } = useAuth();

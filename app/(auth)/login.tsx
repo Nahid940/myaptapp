@@ -4,6 +4,7 @@ import { Stack, useRouter } from "expo-router";
 import { useAuth } from "../../context/AuthContext";
 import { api } from "../../lib/api";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import Footer from "@/components/ui/footer";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -48,11 +49,12 @@ export default function LoginPage() {
         await login(response.token);
         router.replace("/(tabs)");
       } else {
-        Alert.alert("Login Failed", response?.message || "Invalid credentials");
+        newErrors.general = "Login Failed, Invalid credentials";
+        setErrors(newErrors);
       }
     } catch (error) {
-      console.error("Login Error:", error);
-      Alert.alert("Error", "Network error. Please try again.");
+      newErrors.general = "Login Failed, Invalid credentials";
+      setErrors(newErrors)
     } finally {
       setLoading(false);
     }
@@ -79,7 +81,9 @@ export default function LoginPage() {
           <Text style={styles.message}>
                 A complete platform for your smarter leaving
           </Text>
+        {errors.general && <Text style={styles.errorGeneral}>{errors.general}</Text>}
         <View style={styles.inputGroup}>
+
             {/* <Text style={styles.label}>Username</Text> */}
             {errors.username && <Text style={styles.error}>{errors.username}</Text>}
           <TextInput
@@ -106,12 +110,17 @@ export default function LoginPage() {
             disabled={loading}
             style={styles.button}
           >
-             <Text style={{ color: "#fff", fontSize: 16, fontWeight: "bold" }}>
+             <Text style={{ color: "#fcfcfc", fontSize: 20, fontWeight: "bold" }}>
                 {loading ? "Loading..." : "Login"}
             </Text>
          </Pressable>
+          <Text style={{ textAlign: 'center', color: "#f7f7f7", fontSize: 12, fontWeight: "bold",marginTop:10 }}>
+              Residoo - Developed By MNP Techs.
+          </Text>
         </KeyboardAvoidingView>
+
       </SafeAreaProvider>
+      
     </>
   );
 }
@@ -119,24 +128,23 @@ export default function LoginPage() {
 const styles = StyleSheet.create({
     safe: {
         flex: 1,
-        backgroundColor: "#e8feffff",
+        backgroundColor: "rgb(163, 199, 240)",
     },
     container: {
         flex: 1,
-        justifyContent: "center",
+        marginTop:120,
         padding: 10,
     },
     button: {
-        backgroundColor: "#4a9af0ff",
+        backgroundColor: "rgb(53, 148, 238)",
         height: 50,
         borderRadius: 12,
         justifyContent: "center",
         alignItems: "center",
-        color:"#fff"
     },
     input: {
         borderWidth: 1,
-        borderColor: "#ccc",
+        borderColor: "#e0e0e0",
         borderRadius: 8,
         padding: 12,
         marginBottom: 20,
@@ -158,7 +166,7 @@ const styles = StyleSheet.create({
     message:{
         alignSelf:"center",
         marginBottom:10,
-        color:'#ff0062ff',
+        color:"#358fff",
         fontWeight:"bold"
     },
     inputGroup: {
@@ -175,10 +183,11 @@ const styles = StyleSheet.create({
         marginTop: 0,
         fontSize: 14,
     },
+    
     errorGeneral: {
         color: "red",
         textAlign: "center",
-        marginBottom: 0,
-        fontSize: 14,
+        marginBottom: 10,
+        fontSize: 16,
     },
 });

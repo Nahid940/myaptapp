@@ -1,11 +1,11 @@
-import { View, Text, ScrollView, useColorScheme, StyleSheet, TouchableOpacity, Pressable,  ActivityIndicator} from "react-native";
+import { ActivityIndicator, ScrollView, StyleSheet, Text, useColorScheme, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 // import LinearGradient from "react-native-linear-gradient";
 import HomePageIcons from "@/components/ui/homepageIcons";
 import { useRouter } from "expo-router";
 import { api } from "../../lib/api";
 
-import { useState, useEffect }  from 'react';
+import { useEffect, useState } from 'react';
 
 export default function HomeScreen() {
   const colorScheme = useColorScheme();

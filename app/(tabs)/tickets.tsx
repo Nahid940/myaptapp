@@ -1,8 +1,8 @@
+import { useRouter } from "expo-router";
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, FlatList, Alert } from "react-native";
+import { Alert, FlatList, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "../../lib/api";
-import { useRouter } from "expo-router";
 
 export default function TicketForm() {
   const priorityOptions = ["high", "low", "medium"];

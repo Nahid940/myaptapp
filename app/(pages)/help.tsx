@@ -2,6 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet, ScrollView, Linking, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Footer from "@/components/ui/footer";
 
 const contacts = [
   { role: "IT", name: "John Doe", phone: "+880123456789" },
@@ -38,6 +39,7 @@ export default function HelpPage() {
           </TouchableOpacity>
         ))}
       </ScrollView>
+      <Footer/>
     </SafeAreaView>
   );
 }

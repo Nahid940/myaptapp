@@ -1,19 +1,19 @@
 import DateTimePicker, {
-  DateTimePickerAndroid,
+    DateTimePickerAndroid,
 } from "@react-native-community/datetimepicker";
-import React, { useState } from "react";
 import { useRouter } from "expo-router";
+import React, { useState } from "react";
 
 import {
-  Alert,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Alert,
+    Platform,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "../../lib/api";

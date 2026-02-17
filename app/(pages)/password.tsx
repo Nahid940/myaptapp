@@ -4,6 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { api } from "../../lib/api";
 import { useAuth } from "../../context/AuthContext";
 import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function UpdatePassword() {
   const [currentPassword, setCurrentPassword] = useState("");
@@ -56,6 +57,9 @@ const { user, logout } = useAuth();
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <ScrollView contentContainerStyle={styles.container}>
+
+        <Ionicons name="key-outline" size={80} color="#08b943" style={{textAlign:"center"}} />
+
         <Text style={styles.title}>Update Password</Text>
 
         <Text style={styles.label}>Current Password</Text>
@@ -106,9 +110,10 @@ const fakeApiUpdatePassword = (current: string, newPass: string) => {
 const styles = StyleSheet.create({
   container: {
     padding: 20,
-    flexGrow: 1,
+
     justifyContent: "center",
   },
+
   title: {
     fontSize: 24,
     fontWeight: "bold",
