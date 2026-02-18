@@ -1,4 +1,4 @@
-import { ActivityIndicator, ScrollView, StyleSheet, Text, useColorScheme, View } from "react-native";
+import { ActivityIndicator, ScrollView, StyleSheet, Text, useColorScheme, View, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 // import LinearGradient from "react-native-linear-gradient";
 import HomePageIcons from "@/components/ui/homepageIcons";
@@ -53,6 +53,13 @@ export default function HomeScreen() {
     <SafeAreaView style={{ flex: 1 }}>
       <ScrollView style={[styles.container, isDark ? styles.bgLight : styles.bgLight]}>
         {/* Top Card */}
+
+        <View style={styles.row}>
+          <Image
+            source={require("../../assets/images/company_banner.png")}
+            style={styles.banner}
+          />
+        </View>
         
           <View
             style={[
@@ -89,17 +96,27 @@ export default function HomeScreen() {
             <Text style={{ color: "#fff" }}>End Date: {data.booking.end_date}</Text>
         </View>
       </View>
-        <HomePageIcons/>
-        {/* Bottom Cards */}
-        <View style={styles.bottomCardsContainer}>
-          {/* Row 1 */}
-          <View style={[styles.bottomCard, styles.paidCard]}>
-            <Text style={styles.cardTitle}>Total Paid</Text>
-            <Text style={styles.cardValue}>{data.total_paid}</Text>
+      
+      <HomePageIcons/>
+
+        <View style={styles.summaryCard}>
+          <View style={styles.row}>
+            <Text style={styles.label}>Total Paid</Text>
+            <Text style={styles.paidValue}>{data.total_paid}</Text>
           </View>
-          <View style={[styles.bottomCard, styles.dueCard]}>
-            <Text style={styles.cardTitle}>Due</Text>
-            <Text style={styles.cardValue}>{data.due}</Text>
+
+          <View style={styles.divider} />
+
+          <View style={styles.row}>
+            <Text style={styles.label}>Due</Text>
+            <Text style={styles.dueValue}>{data.due}</Text>
+          </View>
+        <View style={styles.divider} />
+        <View style={styles.row}>
+          <Image
+              source={require("../../assets/images/banner1.jpg")}
+              style={styles.banner}
+            />
           </View>
         </View>
       </ScrollView>
@@ -190,9 +207,9 @@ paymentButtonCircleText: {
 },
 
  bottomCard: {
-    width: 180,
+    width: 380,
     borderRadius: 16,
-    paddingVertical: 20,
+    paddingVertical: 5,
     paddingHorizontal: 16,
     alignItems: "center",
     justifyContent: "center",
@@ -223,6 +240,54 @@ paymentButtonCircleText: {
     fontSize: 15,
     fontWeight: "800",
     color: "#FFFFFF",
+  },
+
+summaryCard: {
+  backgroundColor: "#fff",
+  borderRadius: 16,
+  padding: 16,
+  marginTop: 16,
+  shadowColor: "#000",
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.08,
+  shadowRadius: 8,
+  elevation: 4,
+},
+
+row: {
+  flexDirection: "row",
+  justifyContent: "space-between",
+  alignItems: "center",
+},
+
+label: {
+  fontSize: 15,
+  color: "#666",
+  fontWeight: "600",
+},
+
+paidValue: {
+  fontSize: 18,
+  fontWeight: "700",
+  color: "#28a745",
+},
+
+dueValue: {
+  fontSize: 18,
+  fontWeight: "700",
+  color: "#e74c3c",
+},
+
+divider: {
+  height: 1,
+  backgroundColor: "#eee",
+  marginVertical: 12,
+},
+banner: {
+    width: "100%",
+    height: 50,
+    borderRadius: 5,
+    marginBottom: 16,
   },
 
 

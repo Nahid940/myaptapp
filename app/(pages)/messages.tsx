@@ -48,10 +48,10 @@ export default function ChatScreen() {
       <View
         style={[
           styles.bubble,
-          { alignSelf: isTenant ? "flex-end" : "flex-start", backgroundColor: isTenant ? "#4A90E2" : "#E5E5EA" },
+          { alignSelf: isTenant ? "flex-end" : "flex-start", backgroundColor: isTenant ? "#4A90E2" : "#5353f5" },
         ]}
       >
-        <Text style={{ color: isTenant ? "#fff" : "#000" }}>{item.body}</Text>
+        <Text style={{ color: isTenant ? "#fff" : "#faf9f9" }}>{item.body}</Text>
         <Text style={styles.timestamp}>{new Date(item.created_at).toLocaleTimeString()}</Text>
       </View>
     );
@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginVertical: 5,
   },
-  timestamp: { fontSize: 10, marginTop: 3, textAlign: "right", color: "#666" },
+  timestamp: { fontSize: 10, marginTop: 3, textAlign: "right", color: "#faf9f9" },
   inputContainer: {
     flexDirection: "row",
     padding: 10,

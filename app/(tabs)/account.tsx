@@ -1,8 +1,9 @@
 import { Colors } from "@/constants/theme"; // optional shared theme
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { Alert, Pressable, StyleSheet, Text, useColorScheme, View } from "react-native";
+import { Alert, Pressable, StyleSheet, Text, useColorScheme, View, ActivityIndicator, Image} from "react-native";
 import { useAuth } from "../../context/AuthContext";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 
@@ -11,12 +12,20 @@ export default function AccountScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme() ?? "light";
   const theme = Colors[colorScheme];
-
+  const [loading, setLoading] = useState(true);
   const [info, setInfo]  = useState()
 
   const getTenantInfo = async () =>{
-    const response = await api.get('/info')
-    setInfo(response.data)
+    setLoading(true);
+    try {
+      const response = await api.get('/info')
+      setInfo(response.data)
+      // console.log(response.data)
+    } catch (err) {
+      // console.error("Error fetching payments:", err);
+    } finally {
+      setLoading(false);
+    }
   }
 
   const handleLogout = () => {
@@ -38,8 +47,16 @@ export default function AccountScreen() {
   }, [])
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={{ flex: 1 }}>
+    {loading ? 
+
+        (  <ActivityIndicator size="large" color="#df1447" />)
+
+         :
+
+        ( <View style={styles.container}>
       
+     
       {/* Header */}
       <View style={styles.header}>
         <Ionicons name="person-circle-outline" size={80} color="#4A90E2" />
@@ -80,6 +97,11 @@ export default function AccountScreen() {
           <Text style={styles.label}>DOJ:</Text>
           <Text style={styles.value}>{info?.created_at}</Text>
         </View>
+
+        <Image
+          source={require("../../assets/images/banner1.jpg")}
+          style={styles.banner}
+        />
       </View>
 
       <View style={styles.buttonContainer}>
@@ -93,7 +115,8 @@ export default function AccountScreen() {
           <Text style={styles.buttonText}>Update Password</Text>
         </Pressable>
       </View>
-    </View>
+    </View>)}
+    </SafeAreaView>
   );
 }
 
@@ -178,5 +201,11 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 18,
     fontWeight: "bold",
+  },
+  banner: {
+    width: "100%",
+    height: 50,
+    borderRadius: 5,
+    marginBottom: 16,
   },
 });

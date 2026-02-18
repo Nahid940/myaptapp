@@ -4,16 +4,15 @@ import { useRouter } from "expo-router";
 
 export default function HomePageIcons() {
   const items1 = [
-    { title: "Payments", icon: "wallet", color: "#4facfe", route:"/payments" },
+    { title: "My Payments", icon: "wallet", color: "#4facfe", route:"/payments" },
     { title: "Tickets", icon: "ticket", color: "#f02005", count: 0, route:"/ticketsList" },
-    { title: "Notices", icon: "list", color: "#43e97b",count: 0, route:"/notices"  },
     { title: "Guests Book", icon: "person", color: "#fc640d", route:"/guests"  },
+    { title: "Notices", icon: "list", color: "#43e97b",count: 0, route:"/notices"  },
   ];
   const items = [
     { title: "Message", icon: "chatbubble", color: "#6e36f1", count: 0, route:"/messages"  },
-    
-    { title: "Help Center", icon: "alert-circle", color: "#fc36a3", count: 0, route:"/help"  },
-    { title: "Alert", icon: "alert-circle", color: "#f7971e", count: 0, route:"/alerts"  },
+    { title: "Help Center", icon: "alert-circle", color: "#366bfc", count: 0, route:"/help"  },
+    { title: "Alert", icon: "warning-outline", color: "#f3d007", count: 0, route:"/alerts"  },
   ];
 
 

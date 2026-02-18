@@ -4,8 +4,8 @@ import { useAuth } from "@/context/AuthContext";
 
 export default function TabLayout() {
 
-  const { user } = useAuth();
-  if (!user) {
+  const { authToken } = useAuth();
+  if (!authToken) {
     return <Redirect href="/(auth)/login" />;
   }
   

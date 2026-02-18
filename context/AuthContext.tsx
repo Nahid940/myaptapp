@@ -50,7 +50,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser({ ...res, token });
       setAuthToken(token);
     } catch (err) {
-      console.log("Login failed:", err);
+      // console.log("Login failed:", err);
       await SecureStore.deleteItemAsync("token");
       setUser(null);
       throw err;

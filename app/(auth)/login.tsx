@@ -148,6 +148,8 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         padding: 12,
         marginBottom: 20,
+        color:'#000',
+        fontSize:19
     },
     logo: {
         width: 150,
