@@ -6,6 +6,7 @@ import { useRouter } from "expo-router";
 import { api } from "../../lib/api";
 
 import { useEffect, useState } from 'react';
+import ImageSlider from "@/components/ui/homeSlider";
 
 export default function HomeScreen() {
   const colorScheme = useColorScheme();
@@ -118,6 +119,7 @@ export default function HomeScreen() {
               style={styles.banner}
             />
           </View>
+          <ImageSlider/>
         </View>
       </ScrollView>
     </SafeAreaView>
