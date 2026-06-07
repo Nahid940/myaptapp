@@ -7,7 +7,7 @@ export default function ProtectedLayout() {
   if (loading) return null;
 
   if (!user) {
-    return <Redirect href="/auth/login" />;
+    return <Redirect href="/(auth)/login" />;
   }
 
   return <Stack screenOptions={{ headerShown: false }} />;

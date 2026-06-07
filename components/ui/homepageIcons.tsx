@@ -1,99 +1,100 @@
-import { View, Text, TouchableOpacity, StyleSheet, Pressable } from "react-native";
+import { View, Text, StyleSheet, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 
-export default function HomePageIcons() {
-  const items1 = [
-    { title: "My Payments", icon: "wallet", color: "#4facfe", route:"/payments" },
-    { title: "Tickets", icon: "ticket", color: "#f02005", count: 0, route:"/ticketsList" },
-    { title: "Guests Book", icon: "person", color: "#fc640d", route:"/guests"  },
-    { title: "Notices", icon: "list", color: "#43e97b",count: 0, route:"/notices"  },
-  ];
-  const items = [
-    { title: "Message", icon: "chatbubble", color: "#6e36f1", count: 0, route:"/messages"  },
-    { title: "Help Center", icon: "alert-circle", color: "#366bfc", count: 0, route:"/help"  },
-    { title: "Alert", icon: "warning-outline", color: "#f3d007", count: 0, route:"/alerts"  },
-  ];
+type IconItem = {
+  title: string;
+  icon: React.ComponentProps<typeof Ionicons>["name"];
+  color: string;
+  bg: string;
+  count?: number;
+  route: string;
+};
 
+export default function HomePageIcons() {
+  const items: IconItem[] = [
+    { title: "Payments", icon: "wallet", color: "#2563eb", bg: "#dbeafe", route: "/payments" },
+    { title: "My Invoices", icon: "document-text", color: "#4f46e5", bg: "#e0e7ff", route: "/invoices" },
+    { title: "My Ledger", icon: "book", color: "#b45309", bg: "#fef3c7", route: "/ledger" },
+    { title: "Tickets", icon: "ticket", color: "#dc2626", bg: "#fee2e2", count: 0, route: "/ticketsList" },
+    { title: "Guests", icon: "people", color: "#ea580c", bg: "#ffedd5", route: "/guests" },
+    { title: "Notices", icon: "list", color: "#16a34a", bg: "#dcfce7", count: 0, route: "/notices" },
+    { title: "Maintenance", icon: "hammer", color: "#0d9488", bg: "#ccfbf1", route: "/maintenance" },
+    { title: "Utilities", icon: "flash", color: "#0ea5e9", bg: "#e0f2fe", route: "/utilities" },
+    { title: "Message", icon: "chatbubble", color: "#7c3aed", bg: "#ede9fe", count: 0, route: "/messages" },
+    { title: "Help", icon: "help-buoy", color: "#0891b2", bg: "#cffafe", count: 0, route: "/help" },
+    { title: "Alert", icon: "warning", color: "#d97706", bg: "#fef3c7", count: 0, route: "/alerts" },
+    { title: "Profile", icon: "person", color: "#475569", bg: "#e2e8f0", route: "/account" },
+  ];
 
   const router = useRouter();
-  return (
-    <>
-      <View style={styles.row}>
-        {items1.map((item, index) => (
-          <TouchableOpacity key={index} style={styles.item}>
-            <Pressable onPress={() => router.push(item.route)}>
-              <View style={[styles.iconContainer, { backgroundColor: item.color }]}>
-                <Ionicons name={item.icon} size={28} color="#fff" />
-              </View>
-            </Pressable>
-              {item.count > 0 && (
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>{item.count}</Text>
-                </View>
-              )}
-            <Text style={styles.title}>{item.title}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
 
-      <View style={styles.row}>
-        {items.map((item, index) => (
-          <TouchableOpacity key={index} style={styles.item}>
-            <Pressable onPress={() => router.push(item.route)}>
-              <View style={[styles.iconContainer, { backgroundColor: item.color }]}>
-                <Ionicons name={item.icon} size={28} color="#fff" />
+  return (
+    <View style={styles.grid}>
+      {items.map((item, index) => (
+        <Pressable
+          key={index}
+          onPress={() => router.push(item.route as any)}
+          style={({ pressed }) => [styles.item, pressed && styles.itemPressed]}
+        >
+          <View style={[styles.iconContainer, { backgroundColor: item.bg }]}>
+            <Ionicons name={item.icon} size={26} color={item.color} />
+            {(item.count ?? 0) > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{item.count}</Text>
               </View>
-            </Pressable>
-              {item.count > 0 && (
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>{item.count}</Text>
-                </View>
-              )}
-            <Text style={styles.title}>{item.title}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-    </>
+            )}
+          </View>
+          <Text style={styles.title} numberOfLines={1}>
+            {item.title}
+          </Text>
+        </Pressable>
+      ))}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  row: {
+  grid: {
     flexDirection: "row",
-    justifyContent: "flex-start", 
-    marginVertical: 10,
-    paddingHorizontal: 0,
+    flexWrap: "wrap",
   },
   item: {
+    width: "25%",
     alignItems: "center",
-    marginRight: 15,
-
+    marginVertical: 10,
+  },
+  itemPressed: {
+    opacity: 0.6,
+    transform: [{ scale: 0.96 }],
   },
   iconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 10,
+    width: 58,
+    height: 58,
+    borderRadius: 18,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 8,
   },
   title: {
-    fontSize: 14,
+    fontSize: 12.5,
     fontWeight: "600",
+    color: "#334155",
     textAlign: "center",
   },
   badge: {
     position: "absolute",
-    top: -5,
-    right: -5,
+    top: -4,
+    right: -4,
     minWidth: 18,
     height: 18,
     borderRadius: 9,
-    backgroundColor: "#ff3b30",
+    backgroundColor: "#ef4444",
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 4,
+    borderWidth: 2,
+    borderColor: "#fff",
   },
   badgeText: {
     color: "#fff",

@@ -1,11 +1,31 @@
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
-import { Alert, FlatList, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import {
+  Alert,
+  FlatList,
+  Modal,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  ScrollView,
+  Pressable,
+  KeyboardAvoidingView,
+  Platform,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 import { api } from "../../lib/api";
+import { Field, PrimaryButton, FormHeader } from "@/components/ui/form";
+
+const PRIORITY_META: Record<string, { color: string; bg: string; icon: any }> = {
+  high: { color: "#dc2626", bg: "#fee2e2", icon: "arrow-up-circle" },
+  medium: { color: "#d97706", bg: "#fef3c7", icon: "remove-circle" },
+  low: { color: "#16a34a", bg: "#dcfce7", icon: "arrow-down-circle" },
+};
 
 export default function TicketForm() {
-  const priorityOptions = ["high", "low", "medium"];
+  const priorityOptions = ["high", "medium", "low"];
 
   const [subject, setSubject] = useState("");
   const [priority, setPriority] = useState(priorityOptions[0]);
@@ -21,163 +41,240 @@ export default function TicketForm() {
     }
 
     setLoading(true);
-
     try {
-      const response = await api.post("/tickets", {
-        subject,
-        priority,
-        description
-      }
-    );
+      const response = await api.post("/tickets", { subject, priority, description });
 
-      // Check if the server responded with a message or success indicator
       if (response?.message) {
         Alert.alert("Success", `Ticket Submitted! Thank You.`);
-        
-        // Clear form fields
         setSubject("");
-        setPriority(priorityOptions[0]); // Make sure priorityOptions exists
+        setPriority(priorityOptions[0]);
         setDescription("");
       } else {
         Alert.alert("Error", "Something went wrong. Please try again");
       }
     } catch (error) {
-      console.error("Process Error:", error);
       Alert.alert("Error", "Network error. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-
+  const meta = PRIORITY_META[priority];
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-        <View style={styles.container}>
-        <Text style={styles.heading}>Submit a Ticket</Text>
-
-        {/* Subject */}
-        <Text style={styles.label}>Subject *</Text>
-        <TextInput
-            style={styles.input}
-            placeholder="Enter subject"
-            value={subject}
-            onChangeText={setSubject}
-        />
-
-        {/* Priority Dropdown */}
-        <Text style={styles.label}>Priority *</Text>
-        <TouchableOpacity
-            style={styles.dropdownButton}
-            onPress={() => setDropdownVisible(true)}
+    <SafeAreaView style={styles.safe} edges={["top"]}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-            <Text>{priority.toUpperCase()}</Text>
-        </TouchableOpacity>
+          <FormHeader
+            title="Submit a Ticket"
+            subtitle="Tell us about your issue"
+            icon="construct"
+          />
 
-        <Modal
-            visible={dropdownVisible}
-            transparent
-            animationType="fade"
-            onRequestClose={() => setDropdownVisible(false)}
-        >
-            <TouchableOpacity
-            style={styles.modalOverlay}
-            onPress={() => setDropdownVisible(false)}
+          <View style={styles.card}>
+            <Field
+              label="Subject"
+              icon="pencil-outline"
+              required
+              placeholder="Enter subject"
+              value={subject}
+              onChangeText={setSubject}
             />
-            <View style={styles.modalContent}>
-            <FlatList
-                data={priorityOptions}
-                keyExtractor={(item) => item}
-                renderItem={({ item }) => (
-                <TouchableOpacity
-                    style={styles.modalItem}
-                    onPress={() => {
-                    setPriority(item);
-                    setDropdownVisible(false);
+
+            {/* Priority */}
+            <Text style={styles.label}>
+              Priority<Text style={{ color: "#ef4444" }}> *</Text>
+            </Text>
+            <Pressable
+              style={styles.priorityBtn}
+              onPress={() => setDropdownVisible(true)}
+            >
+              <View style={[styles.priorityDot, { backgroundColor: meta.bg }]}>
+                <Ionicons name={meta.icon} size={18} color={meta.color} />
+              </View>
+              <Text style={[styles.priorityText, { color: meta.color }]}>
+                {priority.toUpperCase()}
+              </Text>
+              <Ionicons name="chevron-down" size={20} color="#94a3b8" />
+            </Pressable>
+
+            <Modal
+              visible={dropdownVisible}
+              transparent
+              animationType="fade"
+              onRequestClose={() => setDropdownVisible(false)}
+            >
+              <Pressable
+                style={styles.modalOverlay}
+                onPress={() => setDropdownVisible(false)}
+              >
+                <View style={styles.modalContent}>
+                  <Text style={styles.modalTitle}>Select Priority</Text>
+                  <FlatList
+                    data={priorityOptions}
+                    keyExtractor={(item) => item}
+                    renderItem={({ item }) => {
+                      const m = PRIORITY_META[item];
+                      const active = item === priority;
+                      return (
+                        <TouchableOpacity
+                          style={[styles.modalItem, active && styles.modalItemActive]}
+                          onPress={() => {
+                            setPriority(item);
+                            setDropdownVisible(false);
+                          }}
+                        >
+                          <View style={[styles.priorityDot, { backgroundColor: m.bg }]}>
+                            <Ionicons name={m.icon} size={18} color={m.color} />
+                          </View>
+                          <Text style={[styles.modalItemText, { color: m.color }]}>
+                            {item.toUpperCase()}
+                          </Text>
+                          {active && (
+                            <Ionicons name="checkmark-circle" size={20} color="#159df8" />
+                          )}
+                        </TouchableOpacity>
+                      );
                     }}
-                >
-                    <Text>{item.toUpperCase()}</Text>
-                </TouchableOpacity>
-                )}
+                  />
+                </View>
+              </Pressable>
+            </Modal>
+
+            <View style={{ height: 16 }} />
+
+            <Field
+              label="Description"
+              icon="document-text-outline"
+              required
+              multiline
+              placeholder="Describe your issue in detail"
+              value={description}
+              onChangeText={setDescription}
+              containerStyle={{ marginBottom: 24 }}
             />
-            </View>
-        </Modal>
 
-        {/* Description */}
-        <Text style={styles.label}>Description *</Text>
-        <TextInput
-            style={[styles.input, { height: 100 }]}
-            multiline
-            placeholder="Describe your issue"
-            value={description}
-            onChangeText={setDescription}
-        />
+            <PrimaryButton
+              label="Submit Ticket"
+              icon="paper-plane"
+              loading={loading}
+              colors={["#07ce60", "#059c4a"]}
+              onPress={handleSubmit}
+            />
 
-        {/* Submit */}
-            <View style={styles.buttonRow}>
-                <TouchableOpacity onPress={() => router.push('/ticketsList')} style={styles.listButton}>
-                  <Text style={{ fontWeight: "bold",color:'#fff' }}>View List</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-                    <Text style={{ fontWeight: "bold", color: "#f8f6f6" }}>Submit Ticket</Text>
-                </TouchableOpacity>
-            </View>
-        </View>
+            <TouchableOpacity
+              onPress={() => router.push("/ticketsList")}
+              style={styles.listBtn}
+            >
+              <Ionicons name="list" size={18} color="#159df8" />
+              <Text style={styles.listBtnText}>View My Tickets</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: "#f1f1f1" },
-  heading: { fontSize: 24, fontWeight: "bold", marginBottom: 24, color: "#333" },
-  label: { fontWeight: "600", marginBottom: 6, color: "#555" },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+  safe: { flex: 1, backgroundColor: "#f1f5f9" },
+  scroll: { padding: 18, paddingBottom: 40 },
+  card: {
     backgroundColor: "#fff",
-    marginBottom: 16,
+    borderRadius: 22,
+    padding: 18,
+    shadowColor: "#0f172a",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.07,
+    shadowRadius: 14,
+    elevation: 4,
   },
-  dropdownButton: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    backgroundColor: "#fff",
-    marginBottom: 16,
+  label: {
+    fontSize: 13.5,
+    fontWeight: "700",
+    color: "#475569",
+    marginBottom: 7,
+    marginLeft: 2,
   },
-  submitButton: {
-    backgroundColor: "#07ce60",
-    padding: 16,
-    borderRadius: 12,
-    alignItems: "center",
-  },
-  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.3)" },
-  modalContent: {
-    position: "absolute",
-    top: "30%",
-    left: "10%",
-    right: "10%",
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 12,
-  },
-  listButton: {
-    backgroundColor: "#1d84fa",
-    padding: 16,
-    borderRadius: 12,
-    alignItems: "center",
-    width: 100,
-  },
-   buttonRow: {
+  priorityBtn: {
     flexDirection: "row",
-    justifyContent: "center", // or "center", "space-around"
     alignItems: "center",
-    gap: 12, // React Native 0.71+
-    marginTop: 16,
+    gap: 12,
+    backgroundColor: "#f8fafc",
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: "#e2e8f0",
+    paddingHorizontal: 14,
+    height: 54,
   },
-  modalItem: { padding: 12, borderBottomWidth: 1, borderBottomColor: "#eee" },
+  priorityDot: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  priorityText: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(15,23,42,0.45)",
+    justifyContent: "center",
+    paddingHorizontal: 32,
+  },
+  modalContent: {
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    padding: 16,
+  },
+  modalTitle: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: "#0f172a",
+    marginBottom: 8,
+    marginLeft: 4,
+  },
+  modalItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    borderRadius: 14,
+  },
+  modalItemActive: {
+    backgroundColor: "#f0f9ff",
+  },
+  modalItemText: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  listBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginTop: 16,
+    paddingVertical: 14,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: "#bae6fd",
+    backgroundColor: "#f0f9ff",
+  },
+  listBtnText: {
+    color: "#159df8",
+    fontWeight: "700",
+    fontSize: 15,
+  },
 });

@@ -11,7 +11,7 @@ import {
 import { api } from "../../lib/api";
 import { Background } from "@react-navigation/elements";
 export default function VisitorListScreen() {
-  const [data, setData] = useState([]);
+  const [data, setData] = useState<any[]>([]);
   const [page, setPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -20,7 +20,7 @@ export default function VisitorListScreen() {
     fetchVisitors(page);
   }, [page]);
 
-  const fetchVisitors = async (page) => {
+  const fetchVisitors = async (page: number) => {
     setLoading(true);
 
     try {
@@ -36,7 +36,7 @@ export default function VisitorListScreen() {
     setLoading(false);
   };
 
-  const renderItem = ({ item }) => (
+  const renderItem = ({ item }: { item: any }) => (
     <View style={styles.card}>
       <Text style={styles.cardTitle}>
         Name: {item.guest.first_name} {item.guest.last_name}

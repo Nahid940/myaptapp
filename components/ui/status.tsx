@@ -1,10 +1,10 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import Icon from "react-native-vector-icons/Ionicons"; // Iconion/Ionicons
+import { Ionicons } from "@expo/vector-icons";
 
-export default function StatusCell({ status }) {
+export default function StatusCell({ status }: { status: string }) {
   // Determine icon & color based on status
-  let iconName, color;
+  let iconName: React.ComponentProps<typeof Ionicons>["name"], color;
 
   switch (status.toLowerCase()) {
     case "paid":
@@ -26,7 +26,7 @@ export default function StatusCell({ status }) {
 
   return (
     <View style={[styles.container, { borderColor: color }]}>
-      <Icon name={iconName} size={12} color={color} style={styles.icon} />
+      <Ionicons name={iconName} size={12} color={color} style={styles.icon} />
       <Text style={[styles.text, { color }]}>{status}</Text>
     </View>
   );

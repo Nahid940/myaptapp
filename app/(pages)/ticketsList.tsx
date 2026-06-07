@@ -33,9 +33,9 @@ export default function TicketsList() {
   const getStatusStyle = (status: string) => {
     switch (status) {
       case 'open':
-        return { color: '#f1065f', textAlign:'center' };
+        return { color: '#f1065f', textAlign: 'center' as const };
       case 'solved':
-        return { color: '#61f186', textAlign:'center' };
+        return { color: '#61f186', textAlign: 'center' as const };
       default:
         return { color: '#555' };
     }
@@ -66,7 +66,7 @@ export default function TicketsList() {
           <View key={item.id} style={styles.row}>
             <Text style={styles.cell}>{item.subject}</Text>
             <Text style={styles.cell}>{item.description}</Text>
-            <Text style={[styles.cell, styles[item.priority.toLowerCase()]]}>
+            <Text style={[styles.cell, styles[item.priority.toLowerCase() as keyof typeof styles]]}>
               {item.priority.toUpperCase()}
             </Text>
             <Text style={[styles.cell, getStatusStyle(item.status)]}>{item.status.toUpperCase()}</Text>

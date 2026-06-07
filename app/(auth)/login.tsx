@@ -1,10 +1,22 @@
 import { useState } from "react";
-import { View, TextInput, Pressable , Text, Alert, KeyboardAvoidingView, Platform, StyleSheet, Image } from "react-native";
+import {
+  View,
+  TextInput,
+  Pressable,
+  Text,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  Image,
+  ScrollView,
+  ActivityIndicator,
+} from "react-native";
 import { Stack, useRouter } from "expo-router";
+import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../../context/AuthContext";
 import { api } from "../../lib/api";
-import { SafeAreaProvider } from "react-native-safe-area-context";
-import Footer from "@/components/ui/footer";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -12,12 +24,12 @@ export default function LoginPage() {
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [focused, setFocused] = useState<"username" | "password" | null>(null);
   const [errors, setErrors] = useState<{ username?: string; password?: string; general?: string }>({});
 
-
   const handleLogin = async () => {
-
     setErrors({});
 
     let valid = true;
@@ -54,7 +66,7 @@ export default function LoginPage() {
       }
     } catch (error) {
       newErrors.general = "Login Failed, Invalid credentials";
-      setErrors(newErrors)
+      setErrors(newErrors);
     } finally {
       setLoading(false);
     }
@@ -62,134 +74,328 @@ export default function LoginPage() {
 
   return (
     <>
-      {/* Hide navigation header */}
       <Stack.Screen options={{ headerShown: false }} />
 
-      <SafeAreaProvider style={styles.safe}>
+      <View style={styles.root}>
+        {/* Gradient hero */}
+        <LinearGradient
+          colors={["#159df8", "#0b7dd0", "#0a64b8"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.hero}
+        >
+          {/* decorative circles */}
+          <View style={styles.circleOne} />
+          <View style={styles.circleTwo} />
+
+          <SafeAreaView style={styles.heroContent}>
+            <View style={styles.logoBadge}>
+              <Image
+                source={require("../../assets/images/residdologo.png")}
+                style={styles.logo}
+                resizeMode="contain"
+              />
+            </View>
+            <Text style={styles.heroTitle}>Welcome to Residoo</Text>
+            <Text style={styles.heroSubtitle}>A complete platform for smarter living</Text>
+          </SafeAreaView>
+        </LinearGradient>
+
         <KeyboardAvoidingView
-          style={styles.container}
+          style={styles.flex}
           behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
-        <Image
-            source={require("../../assets/images/residdologo.png")}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-          <Text style={styles.title}>
-                Welcome to Residoo
-          </Text>
-          <Text style={styles.message}>
-                A complete platform for your smarter leaving
-          </Text>
-        {errors.general && <Text style={styles.errorGeneral}>{errors.general}</Text>}
-        <View style={styles.inputGroup}>
-
-            {/* <Text style={styles.label}>Username</Text> */}
-            {errors.username && <Text style={styles.error}>{errors.username}</Text>}
-          <TextInput
-            value={username}
-            onChangeText={setUsername}
-            placeholder="Enter Your Username"
-            autoCapitalize="none"
-            style={styles.input}
-          />
-        </View> 
-         <View style={styles.inputGroup}>
-            {/* <Text style={styles.label}>Password</Text> */}
-            {errors.password && <Text style={styles.error}>{errors.password}</Text>}
-          <TextInput
-            value={password}
-            onChangeText={setPassword}
-            placeholder="Enter Your Password"
-            secureTextEntry
-            style={styles.input}
-          />
-        </View>         
-        <Pressable  
-            onPress={handleLogin}
-            disabled={loading}
-            style={styles.button}
+          <ScrollView
+            contentContainerStyle={styles.scroll}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
           >
-             <Text style={{ color: "#fcfcfc", fontSize: 20, fontWeight: "bold" }}>
-                {loading ? "Loading..." : "Login"}
-            </Text>
-         </Pressable>
-          <Text style={{ textAlign: 'center', color: "#6e6c6c", fontSize: 12, fontWeight: "bold",marginTop:10 }}>
-              Residoo - Developed By MNP Techs.
-          </Text>
-        </KeyboardAvoidingView>
+            {/* Floating card */}
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Sign in</Text>
+              <Text style={styles.cardSubtitle}>Log in to manage your residence</Text>
 
-      </SafeAreaProvider>
-      
+              {errors.general ? (
+                <View style={styles.generalError}>
+                  <Ionicons name="alert-circle" size={18} color="#e11d48" />
+                  <Text style={styles.generalErrorText}>{errors.general}</Text>
+                </View>
+              ) : null}
+
+              {/* Username */}
+              <View
+                style={[
+                  styles.inputWrapper,
+                  focused === "username" && styles.inputWrapperFocused,
+                  errors.username && styles.inputWrapperError,
+                ]}
+              >
+                <Ionicons
+                  name="person-outline"
+                  size={20}
+                  color={focused === "username" ? "#159df8" : "#94a3b8"}
+                  style={styles.inputIcon}
+                />
+                <TextInput
+                  value={username}
+                  onChangeText={setUsername}
+                  onFocus={() => setFocused("username")}
+                  onBlur={() => setFocused(null)}
+                  placeholder="Username"
+                  placeholderTextColor="#94a3b8"
+                  autoCapitalize="none"
+                  style={styles.input}
+                />
+              </View>
+              {errors.username ? <Text style={styles.fieldError}>{errors.username}</Text> : null}
+
+              {/* Password */}
+              <View
+                style={[
+                  styles.inputWrapper,
+                  { marginTop: 16 },
+                  focused === "password" && styles.inputWrapperFocused,
+                  errors.password && styles.inputWrapperError,
+                ]}
+              >
+                <Ionicons
+                  name="lock-closed-outline"
+                  size={20}
+                  color={focused === "password" ? "#159df8" : "#94a3b8"}
+                  style={styles.inputIcon}
+                />
+                <TextInput
+                  value={password}
+                  onChangeText={setPassword}
+                  onFocus={() => setFocused("password")}
+                  onBlur={() => setFocused(null)}
+                  placeholder="Password"
+                  placeholderTextColor="#94a3b8"
+                  secureTextEntry={!showPassword}
+                  style={styles.input}
+                />
+                <Pressable
+                  hitSlop={10}
+                  onPress={() => setShowPassword((s) => !s)}
+                  style={styles.eyeButton}
+                >
+                  <Ionicons
+                    name={showPassword ? "eye-off-outline" : "eye-outline"}
+                    size={20}
+                    color="#94a3b8"
+                  />
+                </Pressable>
+              </View>
+              {errors.password ? <Text style={styles.fieldError}>{errors.password}</Text> : null}
+
+              {/* Login button */}
+              <Pressable
+                onPress={handleLogin}
+                disabled={loading}
+                style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
+              >
+                <LinearGradient
+                  colors={loading ? ["#7cc4f3", "#7cc4f3"] : ["#159df8", "#0b7dd0"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.buttonGradient}
+                >
+                  {loading ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <>
+                      <Text style={styles.buttonText}>Login</Text>
+                      <Ionicons name="arrow-forward" size={20} color="#fff" />
+                    </>
+                  )}
+                </LinearGradient>
+              </Pressable>
+            </View>
+
+            <Text style={styles.footer}>Residoo — Developed by MNP Techs.</Text>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </View>
     </>
   );
 }
 
 const styles = StyleSheet.create({
-    safe: {
-        flex: 1,
-        backgroundColor: "rgb(246, 248, 250)",
-    },
-    container: {
-        flex: 1,
-        marginTop:120,
-        padding: 10,
-    },
-    button: {
-        backgroundColor: "rgb(53, 148, 238)",
-        height: 50,
-        borderRadius: 12,
-        justifyContent: "center",
-        alignItems: "center",
-    },
-    input: {
-        borderWidth: 1,
-        borderColor: "#181717af",
-        borderRadius: 8,
-        padding: 12,
-        marginBottom: 20,
-        color:'#000',
-        fontSize:19
-    },
-    logo: {
-        width: 150,
-        height: 150,
-        alignSelf: "center",
-        marginBottom: 10,
-    },
-    title: {
-        fontSize: 28,
-        fontWeight: "bold",
-        marginBottom: 10,
-        textAlign: "center",
-        color:"#358fff"
-    },
-
-    message:{
-        alignSelf:"center",
-        marginBottom:10,
-        color:"#358fff",
-        fontWeight:"bold"
-    },
-    inputGroup: {
-        marginBottom: 0,
-    },
-    label: {
-        marginBottom: 0,
-        fontSize: 16,
-        fontWeight: "500",
-        color:"#358fff"
-    },
-    error: {
-        color: "red",
-        marginTop: 0,
-        fontSize: 14,
-    },
-
-    errorGeneral: {
-        color: "red",
-        textAlign: "center",
-        marginBottom: 10,
-        fontSize: 16,
-    },
+  root: {
+    flex: 1,
+    backgroundColor: "#f1f5f9",
+  },
+  flex: {
+    flex: 1,
+  },
+  hero: {
+    height: 320,
+    borderBottomLeftRadius: 40,
+    borderBottomRightRadius: 40,
+    overflow: "hidden",
+  },
+  heroContent: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingBottom: 60,
+  },
+  circleOne: {
+    position: "absolute",
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: "rgba(255,255,255,0.12)",
+    top: -60,
+    right: -40,
+  },
+  circleTwo: {
+    position: "absolute",
+    width: 130,
+    height: 130,
+    borderRadius: 65,
+    backgroundColor: "rgba(255,255,255,0.10)",
+    top: 90,
+    left: -30,
+  },
+  logoBadge: {
+    width: 110,
+    height: 110,
+    borderRadius: 30,
+    backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 18,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  logo: {
+    width: 80,
+    height: 80,
+  },
+  heroTitle: {
+    fontSize: 26,
+    fontWeight: "800",
+    color: "#fff",
+    letterSpacing: 0.3,
+  },
+  heroSubtitle: {
+    fontSize: 14,
+    color: "rgba(255,255,255,0.9)",
+    marginTop: 6,
+  },
+  scroll: {
+    paddingHorizontal: 24,
+    paddingBottom: 30,
+  },
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 24,
+    padding: 24,
+    marginTop: -50,
+    shadowColor: "#0f172a",
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.12,
+    shadowRadius: 24,
+    elevation: 10,
+  },
+  cardTitle: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: "#0f172a",
+  },
+  cardSubtitle: {
+    fontSize: 14,
+    color: "#64748b",
+    marginTop: 4,
+    marginBottom: 24,
+  },
+  generalError: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "#fef2f2",
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginBottom: 18,
+  },
+  generalErrorText: {
+    color: "#e11d48",
+    fontSize: 14,
+    fontWeight: "600",
+    flex: 1,
+  },
+  inputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f8fafc",
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: "#e2e8f0",
+    paddingHorizontal: 14,
+    height: 56,
+  },
+  inputWrapperFocused: {
+    borderColor: "#159df8",
+    backgroundColor: "#fff",
+  },
+  inputWrapperError: {
+    borderColor: "#f43f5e",
+  },
+  inputIcon: {
+    marginRight: 10,
+  },
+  input: {
+    flex: 1,
+    fontSize: 16,
+    color: "#0f172a",
+    height: "100%",
+  },
+  eyeButton: {
+    paddingLeft: 8,
+  },
+  fieldError: {
+    color: "#e11d48",
+    fontSize: 13,
+    marginTop: 6,
+    marginLeft: 4,
+  },
+  button: {
+    marginTop: 28,
+    borderRadius: 14,
+    overflow: "hidden",
+    shadowColor: "#159df8",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+  buttonPressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.99 }],
+  },
+  buttonGradient: {
+    height: 56,
+    borderRadius: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  buttonText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  footer: {
+    textAlign: "center",
+    color: "#94a3b8",
+    fontSize: 12,
+    fontWeight: "600",
+    marginTop: 24,
+  },
 });

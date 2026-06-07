@@ -1,10 +1,20 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, Pressable, StyleSheet, Alert, ScrollView } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Alert,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 import { api } from "../../lib/api";
 import { useAuth } from "../../context/AuthContext";
 import { useRouter } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { Field, PrimaryButton } from "@/components/ui/form";
 
 export default function UpdatePassword() {
   const [currentPassword, setCurrentPassword] = useState("");
@@ -12,8 +22,9 @@ export default function UpdatePassword() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-const { user, logout } = useAuth();
-  const router = useRouter()
+  const { logout } = useAuth();
+  const router = useRouter();
+
   const handleSubmit = async () => {
     if (!currentPassword || !newPassword || !confirmPassword) {
       Alert.alert("Error", "All fields are required");
@@ -25,15 +36,12 @@ const { user, logout } = useAuth();
     }
 
     setLoading(true);
-
     try {
-      // Replace URL with your backend endpoint
-        const response = await api.post("/update-password", {
-                current_password: currentPassword,
-                new_password: newPassword,
-                new_password_confirmation: confirmPassword,
-            },
-        );
+      const response = await api.post("/update-password", {
+        current_password: currentPassword,
+        new_password: newPassword,
+        new_password_confirmation: confirmPassword,
+      });
 
       if (response.status === 200) {
         Alert.alert("Success", "Password updated successfully");
@@ -41,95 +49,137 @@ const { user, logout } = useAuth();
         setNewPassword("");
         setConfirmPassword("");
         logout();
-        router.replace("/login");       
+        router.replace("/login");
       }
     } catch (err: any) {
-      console.log(err.response?.data || err.message);
-      Alert.alert(
-        "Error",
-        err.response?.data?.message || "Something went wrong"
-      );
+      Alert.alert("Error", err.response?.data?.message || "Something went wrong");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <ScrollView contentContainerStyle={styles.container}>
-
-        <Ionicons name="key-outline" size={80} color="#08b943" style={{textAlign:"center"}} />
-
-        <Text style={styles.title}>Update Password</Text>
-
-        <Text style={styles.label}>Current Password</Text>
-        <TextInput
-          style={styles.input}
-          secureTextEntry
-          placeholder="Enter current password"
-          value={currentPassword}
-          onChangeText={setCurrentPassword}
-        />
-
-        <Text style={styles.label}>New Password</Text>
-        <TextInput
-          style={styles.input}
-          secureTextEntry
-          placeholder="Enter new password"
-          value={newPassword}
-          onChangeText={setNewPassword}
-        />
-
-        <Text style={styles.label}>Confirm New Password</Text>
-        <TextInput
-          style={styles.input}
-          secureTextEntry
-          placeholder="Confirm new password"
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-        />
-
-        <Pressable style={styles.button} onPress={handleSubmit} disabled={loading}>
-          <Text style={styles.buttonText}>{loading ? "Updating..." : "Update Password"}</Text>
+    <SafeAreaView style={styles.safe} edges={["top"]}>
+      <View style={styles.navbar}>
+        <Pressable hitSlop={10} onPress={() => router.back()} style={styles.backBtn}>
+          <Ionicons name="arrow-back" size={22} color="#0f172a" />
         </Pressable>
-      </ScrollView>
+        <Text style={styles.navTitle}>Update Password</Text>
+        <View style={{ width: 38 }} />
+      </View>
+
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.iconBadge}>
+            <Ionicons name="lock-closed" size={36} color="#159df8" />
+          </View>
+          <Text style={styles.heading}>Change your password</Text>
+          <Text style={styles.sub}>
+            For your security, you'll be logged out after updating.
+          </Text>
+
+          <View style={styles.card}>
+            <Field
+              label="Current Password"
+              icon="lock-closed-outline"
+              required
+              isPassword
+              placeholder="Enter current password"
+              value={currentPassword}
+              onChangeText={setCurrentPassword}
+            />
+            <Field
+              label="New Password"
+              icon="key-outline"
+              required
+              isPassword
+              placeholder="Enter new password"
+              value={newPassword}
+              onChangeText={setNewPassword}
+            />
+            <Field
+              label="Confirm New Password"
+              icon="key-outline"
+              required
+              isPassword
+              placeholder="Confirm new password"
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              containerStyle={{ marginBottom: 24 }}
+            />
+
+            <PrimaryButton
+              label="Update Password"
+              icon="checkmark"
+              loading={loading}
+              onPress={handleSubmit}
+            />
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 20,
-
+  safe: { flex: 1, backgroundColor: "#f1f5f9" },
+  navbar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  backBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: "#fff",
+    alignItems: "center",
     justifyContent: "center",
   },
-
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 30,
+  navTitle: { fontSize: 17, fontWeight: "800", color: "#0f172a" },
+  scroll: { padding: 18, paddingBottom: 40 },
+  iconBadge: {
+    width: 72,
+    height: 72,
+    borderRadius: 24,
+    backgroundColor: "#e0f2fe",
+    alignSelf: "center",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 8,
+    marginBottom: 16,
+  },
+  heading: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: "#0f172a",
     textAlign: "center",
   },
-  label: {
-    fontSize: 16,
-    marginBottom: 6,
+  sub: {
+    fontSize: 13.5,
+    color: "#64748b",
+    textAlign: "center",
+    marginTop: 6,
+    marginBottom: 22,
+    paddingHorizontal: 20,
   },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 20,
-  },
-  button: {
-    backgroundColor: "#007AFF",
-    paddingVertical: 14,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  buttonText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 16,
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 22,
+    padding: 18,
+    shadowColor: "#0f172a",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.07,
+    shadowRadius: 14,
+    elevation: 4,
   },
 });

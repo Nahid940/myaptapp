@@ -1,18 +1,54 @@
 import React,{ useEffect, useState } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from 'react-native';
 // Built-in Expo Icons
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams  } from "expo-router";
+import * as SecureStore from "expo-secure-store";
+import * as FileSystem from "expo-file-system/legacy";
+import * as Sharing from "expo-sharing";
 import { api } from '@/lib/api';
 export default function PaymentDetails() {
   const router = useRouter();
 
   const [payment, setPayment] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [downloading, setDownloading] = useState(false);
 
   const params = useLocalSearchParams<{ id: string }>();
   const paymentId = params.id;
+
+  const handleDownload = async () => {
+    try {
+      setDownloading(true);
+      const token = await SecureStore.getItemAsync("token");
+      const url = `${api.baseUrl}/receipts/${paymentId}/pdf`;
+      const fileUri = `${FileSystem.documentDirectory}receipt-${paymentId}.pdf`;
+
+      const { uri, status } = await FileSystem.downloadAsync(url, fileUri, {
+        headers: token ? { Authorization: `Bearer ${token}`, Accept: "application/pdf" } : undefined,
+      });
+
+      if (status !== 200) {
+        Alert.alert("Error", "Could not download the receipt. Please try again.");
+        return;
+      }
+
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(uri, {
+          mimeType: "application/pdf",
+          dialogTitle: "Payment Receipt",
+          UTI: "com.adobe.pdf",
+        });
+      } else {
+        Alert.alert("Downloaded", "Receipt saved to the app's documents folder.");
+      }
+    } catch (err) {
+      Alert.alert("Error", "Failed to download receipt. Please check your connection.");
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   const fetchPayment = async () => {
     setLoading(true);
@@ -85,9 +121,20 @@ export default function PaymentDetails() {
 
         {/* Footer Actions */}
         <View style={styles.footer}>
-          <TouchableOpacity style={styles.downloadButton}>
-            <MaterialCommunityIcons name="file-download-outline" size={20} color="#2563eb" />
-            <Text style={styles.downloadText}>Download PDF Receipt</Text>
+          <TouchableOpacity
+            style={[styles.downloadButton, downloading && { opacity: 0.7 }]}
+            onPress={handleDownload}
+            disabled={downloading}
+            activeOpacity={0.8}
+          >
+            {downloading ? (
+              <ActivityIndicator size="small" color="#2563eb" />
+            ) : (
+              <MaterialCommunityIcons name="file-download-outline" size={20} color="#2563eb" />
+            )}
+            <Text style={styles.downloadText}>
+              {downloading ? "Downloading…" : "Download PDF Receipt"}
+            </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -95,7 +142,17 @@ export default function PaymentDetails() {
   );
 }
 
-const DetailRow = ({ label, value, isBold, isCard }) => (
+const DetailRow = ({
+  label,
+  value,
+  isBold,
+  isCard,
+}: {
+  label: string;
+  value: any;
+  isBold?: boolean;
+  isCard?: boolean;
+}) => (
   <View style={styles.row}>
     <Text style={styles.rowLabel}>{label}</Text>
     <View style={{ flexDirection: 'row', alignItems: 'center' }}>

@@ -34,7 +34,7 @@ class ApiService {
     return data;
   }
 
-  async get<T>(endpoint: string, token?: string): Promise<T> {
+  async get<T = any>(endpoint: string, token?: string): Promise<T> {
     const res = await fetch(`${this.baseUrl}${endpoint}`, {
       method: "GET",
       headers: await this.getHeaders(),
@@ -42,7 +42,7 @@ class ApiService {
     return this.handleResponse<T>(res);
   }
 
-  async post<T>(endpoint: string, body: any): Promise<T> {
+  async post<T = any>(endpoint: string, body: any): Promise<T> {
     const res = await fetch(`${this.baseUrl}${endpoint}`, {
       method: "POST",
       headers: await this.getHeaders(),
@@ -51,7 +51,7 @@ class ApiService {
     return this.handleResponse<T>(res);
   }
 
-  async put<T>(endpoint: string, body: any, token?: string): Promise<T> {
+  async put<T = any>(endpoint: string, body: any, token?: string): Promise<T> {
     const res = await fetch(`${this.baseUrl}${endpoint}`, {
       method: "PUT",
       headers: await this.getHeaders(),
@@ -60,7 +60,7 @@ class ApiService {
     return this.handleResponse<T>(res);
   }
 
-  async delete<T>(endpoint: string, token?: string): Promise<T> {
+  async delete<T = any>(endpoint: string, token?: string): Promise<T> {
     const res = await fetch(`${this.baseUrl}${endpoint}`, {
       method: "DELETE",
       headers: await this.getHeaders(),

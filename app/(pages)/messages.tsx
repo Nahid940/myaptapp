@@ -98,6 +98,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 5,
     paddingVertical: 5,
   },
+  navTitle: { fontSize: 18, fontWeight: '700', color: '#1e293b' },
   bubble: {
     maxWidth: "70%",
     padding: 10,
