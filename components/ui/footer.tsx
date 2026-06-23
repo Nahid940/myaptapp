@@ -4,7 +4,7 @@ export default function Footer() {
   return (
     <View style={styles.footer}>
       <Text style={styles.text}>
-            Residoo - Developed By MNP Techs.
+            ACL - Developed By MNP Techs.
       </Text>
     </View>
   );

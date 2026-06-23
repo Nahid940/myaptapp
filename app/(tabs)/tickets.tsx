@@ -17,6 +17,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { api } from "../../lib/api";
 import { Field, PrimaryButton, FormHeader } from "@/components/ui/form";
+import { useTheme } from "@/context/ThemeContext";
 
 const PRIORITY_META: Record<string, { color: string; bg: string; icon: any }> = {
   high: { color: "#dc2626", bg: "#fee2e2", icon: "arrow-up-circle" },
@@ -25,6 +26,7 @@ const PRIORITY_META: Record<string, { color: string; bg: string; icon: any }> = 
 };
 
 export default function TicketForm() {
+  const { colors, isDark } = useTheme();
   const priorityOptions = ["high", "medium", "low"];
 
   const [subject, setSubject] = useState("");
@@ -62,7 +64,7 @@ export default function TicketForm() {
   const meta = PRIORITY_META[priority];
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.bg }]} edges={["top"]}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -78,7 +80,7 @@ export default function TicketForm() {
             icon="construct"
           />
 
-          <View style={styles.card}>
+          <View style={[styles.card, { backgroundColor: colors.card }]}>
             <Field
               label="Subject"
               icon="pencil-outline"
@@ -89,11 +91,11 @@ export default function TicketForm() {
             />
 
             {/* Priority */}
-            <Text style={styles.label}>
+            <Text style={[styles.label, { color: colors.text }]}>
               Priority<Text style={{ color: "#ef4444" }}> *</Text>
             </Text>
             <Pressable
-              style={styles.priorityBtn}
+              style={[styles.priorityBtn, { backgroundColor: colors.inputBg, borderColor: colors.border }]}
               onPress={() => setDropdownVisible(true)}
             >
               <View style={[styles.priorityDot, { backgroundColor: meta.bg }]}>
@@ -102,7 +104,7 @@ export default function TicketForm() {
               <Text style={[styles.priorityText, { color: meta.color }]}>
                 {priority.toUpperCase()}
               </Text>
-              <Ionicons name="chevron-down" size={20} color="#94a3b8" />
+              <Ionicons name="chevron-down" size={20} color={colors.muted} />
             </Pressable>
 
             <Modal
@@ -115,8 +117,8 @@ export default function TicketForm() {
                 style={styles.modalOverlay}
                 onPress={() => setDropdownVisible(false)}
               >
-                <View style={styles.modalContent}>
-                  <Text style={styles.modalTitle}>Select Priority</Text>
+                <View style={[styles.modalContent, { backgroundColor: colors.card }]}>
+                  <Text style={[styles.modalTitle, { color: colors.text }]}>Select Priority</Text>
                   <FlatList
                     data={priorityOptions}
                     keyExtractor={(item) => item}
@@ -125,7 +127,10 @@ export default function TicketForm() {
                       const active = item === priority;
                       return (
                         <TouchableOpacity
-                          style={[styles.modalItem, active && styles.modalItemActive]}
+                          style={[
+                            styles.modalItem,
+                            active && { backgroundColor: isDark ? "rgba(58,169,240,0.15)" : "#f0f9ff" },
+                          ]}
                           onPress={() => {
                             setPriority(item);
                             setDropdownVisible(false);

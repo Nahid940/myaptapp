@@ -1,6 +1,7 @@
 import { View, Text, StyleSheet, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useTheme } from "@/context/ThemeContext";
 
 type IconItem = {
   title: string;
@@ -28,6 +29,7 @@ export default function HomePageIcons() {
   ];
 
   const router = useRouter();
+  const { colors } = useTheme();
 
   return (
     <View style={styles.grid}>
@@ -45,7 +47,7 @@ export default function HomePageIcons() {
               </View>
             )}
           </View>
-          <Text style={styles.title} numberOfLines={1}>
+          <Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>
             {item.title}
           </Text>
         </Pressable>

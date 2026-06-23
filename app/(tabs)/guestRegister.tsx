@@ -3,185 +3,164 @@ import DateTimePicker, {
 } from "@react-native-community/datetimepicker";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
-
 import {
   Alert,
+  KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
-  KeyboardAvoidingView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { api } from "../../lib/api";
 import { Field, PrimaryButton, FormHeader } from "@/components/ui/form";
+import { useTheme } from "@/context/ThemeContext";
+
+const VISIT_TYPES = ["Personal Visit", "Delivery", "Service / Contractor", "Estate Agent"];
+const ACCESS_METHODS = ["QR Code", "Guest Pass", "Manual Pass"];
+
+type IconName = React.ComponentProps<typeof Ionicons>["name"];
+
+const VISIT_ICON: Record<string, IconName> = {
+  "Personal Visit": "person",
+  Delivery: "cube",
+  "Service / Contractor": "construct",
+  "Estate Agent": "business",
+};
+
+const ACCESS_ICON: Record<string, IconName> = {
+  "QR Code": "qr-code",
+  "Guest Pass": "card",
+  "Manual Pass": "create",
+};
 
 export default function GuestVisitForm() {
-  /* -------------------- FORM -------------------- */
-  const [form, setForm] = useState({
-    first_name: "",
-    last_name: "",
-    phone: "",
-    apartment: "",
-    unit: "",
-    vehicle_number: "",
-    id_number: "",
-    visit_duration: "",
-    purpose: "",
-  });
-
   const router = useRouter();
+  const { colors, isDark } = useTheme();
 
-  const handleChange = (field: string, value: string) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
-  };
+  const [firstName, setFirstName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [idNo, setIdNo] = useState("");
+  const [remarks, setRemarks] = useState("");
+  const [visitType, setVisitType] = useState(VISIT_TYPES[0]);
+  const [accessMethod, setAccessMethod] = useState(ACCESS_METHODS[0]);
 
+  const [validFrom, setValidFrom] = useState(new Date());
+  const [validTo, setValidTo] = useState(new Date());
+
+  const [modal, setModal] = useState<null | "visit" | "access">(null);
+  const [iosDate, setIosDate] = useState<null | "from" | "to">(null);
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<{ first_name?: string; phone?: string }>({});
 
-  /* -------------------- ACCOMPANYING -------------------- */
-  const [persons, setPersons] = useState<{ first_name: string; phone: string }[]>([
-    { first_name: "", phone: "" },
-  ]);
-
-  const handleAccompanyingChange = (
-    index: number,
-    field: "first_name" | "phone",
-    value: string
-  ) => {
-    const updated = [...persons];
-    updated[index][field] = value;
-    setPersons(updated);
+  const fmtDate = (d: Date) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
   };
 
-  const addAccompanying = () => {
-    setPersons([...persons, { first_name: "", phone: "" }]);
-  };
-
-  const removeAccompanying = (index: number) => {
-    const updated = [...persons];
-    updated.splice(index, 1);
-    setPersons(updated);
-  };
-
-  /* -------------------- DATES -------------------- */
-  const [entryDate, setEntryDate] = useState(new Date());
-  const [exitDate, setExitDate] = useState(new Date());
-
-  const formatDateTime = (date: Date) => {
-    const hours = date.getHours() % 12 || 12;
-    const minutes = date.getMinutes().toString().padStart(2, "0");
-    const ampm = date.getHours() >= 12 ? "PM" : "AM";
-    const year = date.getFullYear();
-    const month = (date.getMonth() + 1).toString().padStart(2, "0");
-    const day = date.getDate().toString().padStart(2, "0");
-    return `${year}-${month}-${day} ${hours}:${minutes} ${ampm}`;
-  };
-
-  /* -------------------- ANDROID PICKER -------------------- */
-  const openAndroidDateTime = (type: "entry" | "exit") => {
-    DateTimePickerAndroid.open({
-      value: type === "entry" ? entryDate : exitDate,
-      mode: "date",
-      onChange: (event, date) => {
-        if (event.type !== "set" || !date) return;
-        DateTimePickerAndroid.open({
-          value: date,
-          mode: "time",
-          is24Hour: true,
-          onChange: (e, time) => {
-            if (e.type !== "set" || !time) return;
-            const finalDate = new Date(date);
-            finalDate.setHours(time.getHours());
-            finalDate.setMinutes(time.getMinutes());
-            type === "entry" ? setEntryDate(finalDate) : setExitDate(finalDate);
-          },
-        });
-      },
-    });
-  };
-
-  /* -------------------- iOS PICKER -------------------- */
-  const [iosPicker, setIosPicker] = useState<"entry" | "exit" | null>(null);
-
-  /* -------------------- SUBMIT -------------------- */
-  const handleSubmit = async () => {
-    if (!form.first_name || !form.phone || !entryDate || !exitDate) {
-      Alert.alert("Error", "Please fill all required fields (First Name, Phone, Entry & Exit).");
-      return;
+  const openDate = (which: "from" | "to") => {
+    if (Platform.OS === "android") {
+      DateTimePickerAndroid.open({
+        value: which === "from" ? validFrom : validTo,
+        mode: "date",
+        onChange: (e, date) => {
+          if (e.type !== "set" || !date) return;
+          which === "from" ? setValidFrom(date) : setValidTo(date);
+        },
+      });
+    } else {
+      setIosDate(which);
     }
+  };
+
+  const handleSubmit = async () => {
+    const e: typeof errors = {};
+    if (!firstName.trim()) e.first_name = "First name is required";
+    if (!phone.trim()) e.phone = "Phone is required";
+    setErrors(e);
+    if (Object.keys(e).length) return;
 
     setLoading(true);
     try {
       const payload = {
-        ...form,
-        entryDate: entryDate?.toISOString(),
-        exitDate: exitDate?.toISOString(),
-        persons: persons.filter((p) => p.first_name || p.phone),
+        first_name: firstName.trim(),
+        phone: phone.trim(),
+        id_passport_no: idNo.trim(),
+        visit_type: visitType,
+        access_method: accessMethod,
+        valid_from: fmtDate(validFrom),
+        valid_to: fmtDate(validTo),
+        remarks: remarks.trim(),
       };
 
-      const response = await api.post("/guest-register", payload);
+      const res = await api.post("/guest-register", payload);
 
-      if (response?.data?.status === "success") {
-        Alert.alert("Success", "Guest visit registered successfully!");
-        setForm({
-          first_name: "",
-          last_name: "",
-          phone: "",
-          apartment: "",
-          unit: "",
-          vehicle_number: "",
-          id_number: "",
-          visit_duration: "",
-          purpose: "",
-        });
-        setEntryDate(new Date());
-        setExitDate(new Date());
-        setPersons([{ first_name: "", phone: "" }]);
+      if (res?.success || res?.data || res?.message) {
+        Alert.alert("Success", res?.message || "Guest registered successfully!");
+        setFirstName("");
+        setPhone("");
+        setIdNo("");
+        setRemarks("");
+        setVisitType(VISIT_TYPES[0]);
+        setAccessMethod(ACCESS_METHODS[0]);
+        setValidFrom(new Date());
+        setValidTo(new Date());
       } else {
-        Alert.alert("Error", response?.message || "Something went wrong. Please try again.");
+        Alert.alert("Error", "Something went wrong. Please try again.");
       }
-    } catch (error) {
+    } catch (err) {
       Alert.alert("Error", "Network error. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  /* -------------------- DATE FIELD -------------------- */
-  const DateField = ({
+  const Selector = ({
     label,
-    date,
-    type,
+    value,
+    icon,
+    onPress,
   }: {
     label: string;
-    date: Date;
-    type: "entry" | "exit";
+    value: string;
+    icon: IconName;
+    onPress: () => void;
   }) => (
-    <View style={{ flex: 1 }}>
-      <Text style={styles.label}>
-        {label}
-        <Text style={{ color: "#ef4444" }}> *</Text>
-      </Text>
+    <View style={{ marginBottom: 16 }}>
+      <Text style={[styles.label, { color: colors.text }]}>{label}</Text>
       <Pressable
-        onPress={() =>
-          Platform.OS === "android" ? openAndroidDateTime(type) : setIosPicker(type)
-        }
-        style={styles.dateField}
+        style={[styles.selector, { backgroundColor: colors.inputBg, borderColor: colors.border }]}
+        onPress={onPress}
       >
-        <Ionicons name="calendar-outline" size={18} color="#159df8" style={{ marginRight: 8 }} />
-        <Text style={styles.dateText}>{formatDateTime(date)}</Text>
+        <Ionicons name={icon} size={18} color="#159df8" />
+        <Text style={[styles.selectorText, { color: colors.text }]}>{value}</Text>
+        <Ionicons name="chevron-down" size={18} color={colors.muted} />
       </Pressable>
     </View>
   );
 
-  /* -------------------- UI -------------------- */
+  const DateBox = ({ label, date, which }: { label: string; date: Date; which: "from" | "to" }) => (
+    <View style={{ flex: 1 }}>
+      <Text style={[styles.label, { color: colors.text }]}>{label}</Text>
+      <Pressable
+        onPress={() => openDate(which)}
+        style={[styles.selector, { backgroundColor: colors.inputBg, borderColor: colors.border }]}
+      >
+        <Ionicons name="calendar-outline" size={18} color="#159df8" />
+        <Text style={[styles.selectorText, { color: colors.text }]}>{fmtDate(date)}</Text>
+      </Pressable>
+    </View>
+  );
+
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.bg }]} edges={["top"]}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -191,160 +170,143 @@ export default function GuestVisitForm() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <FormHeader
-            title="Register a Guest"
-            subtitle="Add visitor details"
-            icon="person-add"
-          />
+          <FormHeader title="Register a Guest" subtitle="Add visitor details" icon="person-add" />
 
-          {/* Guest details */}
-          <View style={styles.card}>
-            <Text style={styles.sectionLabel}>Guest Details</Text>
-            <View style={styles.row}>
-              <Field
-                label="First Name"
-                required
-                containerStyle={{ flex: 1 }}
-                value={form.first_name}
-                onChangeText={(t) => handleChange("first_name", t)}
-              />
-              <Field
-                label="Last Name"
-                containerStyle={{ flex: 1 }}
-                value={form.last_name}
-                onChangeText={(t) => handleChange("last_name", t)}
-              />
-            </View>
-
+          {/* Visitor */}
+          <View style={[styles.card, { backgroundColor: colors.card }]}>
+            <Text style={styles.sectionLabel}>Visitor</Text>
+            <Field
+              label="Full Name"
+              icon="person-outline"
+              required
+              placeholder="e.g. Jane Visitor"
+              value={firstName}
+              onChangeText={setFirstName}
+              error={errors.first_name}
+            />
             <Field
               label="Phone"
               icon="call-outline"
               required
               keyboardType="phone-pad"
-              value={form.phone}
-              onChangeText={(t) => handleChange("phone", t)}
+              placeholder="+254700111222"
+              value={phone}
+              onChangeText={setPhone}
+              error={errors.phone}
             />
-
-            <View style={styles.row}>
-              <DateField label="Entry Date & Time" date={entryDate} type="entry" />
-              <DateField label="Exit Date & Time" date={exitDate} type="exit" />
-            </View>
-
-            {Platform.OS === "ios" && iosPicker && (
-              <DateTimePicker
-                value={iosPicker === "entry" ? entryDate : exitDate}
-                mode="datetime"
-                display="spinner"
-                onChange={(e, d) => {
-                  if (d) iosPicker === "entry" ? setEntryDate(d) : setExitDate(d);
-                  setIosPicker(null);
-                }}
-              />
-            )}
-          </View>
-
-          {/* Extra info */}
-          <View style={styles.card}>
-            <Text style={styles.sectionLabel}>Additional Info</Text>
-            <View style={styles.row}>
-              <Field
-                label="Vehicle Number"
-                icon="car-outline"
-                containerStyle={{ flex: 1 }}
-                value={form.vehicle_number}
-                onChangeText={(t) => handleChange("vehicle_number", t)}
-              />
-              <Field
-                label="ID Number"
-                icon="card-outline"
-                containerStyle={{ flex: 1 }}
-                value={form.id_number}
-                onChangeText={(t) => handleChange("id_number", t)}
-              />
-            </View>
-
             <Field
-              label="Visit Duration"
-              icon="time-outline"
-              value={form.visit_duration}
-              onChangeText={(t) => handleChange("visit_duration", t)}
-            />
-
-            <Field
-              label="Purpose of Visit"
-              icon="chatbox-ellipses-outline"
-              multiline
-              value={form.purpose}
-              onChangeText={(t) => handleChange("purpose", t)}
+              label="ID / Passport No."
+              icon="card-outline"
+              placeholder="12345678"
+              value={idNo}
+              onChangeText={setIdNo}
               containerStyle={{ marginBottom: 0 }}
             />
           </View>
 
-          {/* Accompanying */}
-          <View style={styles.card}>
-            <Text style={styles.sectionLabel}>Accompanying Persons</Text>
-            {persons.map((p, i) => (
-              <View key={i} style={styles.personRow}>
-                <TextInput
-                  style={styles.personInput}
-                  placeholder="Name"
-                  placeholderTextColor="#94a3b8"
-                  value={p.first_name}
-                  onChangeText={(t) => handleAccompanyingChange(i, "first_name", t)}
-                />
-                <TextInput
-                  style={styles.personInput}
-                  placeholder="Phone"
-                  placeholderTextColor="#94a3b8"
-                  keyboardType="phone-pad"
-                  value={p.phone}
-                  onChangeText={(t) => handleAccompanyingChange(i, "phone", t)}
-                />
-                {i > 0 && (
-                  <TouchableOpacity
-                    onPress={() => removeAccompanying(i)}
-                    style={styles.removeBtn}
-                  >
-                    <Ionicons name="close" size={18} color="#fff" />
-                  </TouchableOpacity>
-                )}
-              </View>
-            ))}
+          {/* Visit details */}
+          <View style={[styles.card, { backgroundColor: colors.card }]}>
+            <Text style={styles.sectionLabel}>Visit Details</Text>
 
-            <TouchableOpacity onPress={addAccompanying} style={styles.addBtn}>
-              <Ionicons name="add" size={18} color="#159df8" />
-              <Text style={styles.addBtnText}>Add Person</Text>
-            </TouchableOpacity>
+            <Selector
+              label="Visit Type"
+              value={visitType}
+              icon={VISIT_ICON[visitType] ?? "person"}
+              onPress={() => setModal("visit")}
+            />
+
+            <Selector
+              label="Access Method"
+              value={accessMethod}
+              icon={ACCESS_ICON[accessMethod] ?? "qr-code"}
+              onPress={() => setModal("access")}
+            />
+
+            <View style={styles.row}>
+              <DateBox label="Valid From" date={validFrom} which="from" />
+              <DateBox label="Valid To" date={validTo} which="to" />
+            </View>
+
+            {Platform.OS === "ios" && iosDate && (
+              <DateTimePicker
+                value={iosDate === "from" ? validFrom : validTo}
+                mode="date"
+                display="spinner"
+                onChange={(e, d) => {
+                  if (d) iosDate === "from" ? setValidFrom(d) : setValidTo(d);
+                  setIosDate(null);
+                }}
+              />
+            )}
+
+            <Field
+              label="Remarks"
+              icon="chatbox-ellipses-outline"
+              multiline
+              placeholder="e.g. Allow parking"
+              value={remarks}
+              onChangeText={setRemarks}
+              containerStyle={{ marginBottom: 0 }}
+            />
           </View>
 
-          {/* Submit */}
           <PrimaryButton
-            label="Save Guest"
+            label="Register Guest"
             icon="checkmark"
             loading={loading}
             colors={["#07ce60", "#059c4a"]}
             onPress={handleSubmit}
           />
 
-          <TouchableOpacity
-            onPress={() => router.push("/guests")}
-            style={styles.listBtn}
-          >
+          <TouchableOpacity onPress={() => router.push("/guests")} style={styles.listBtn}>
             <Ionicons name="list" size={18} color="#159df8" />
             <Text style={styles.listBtnText}>View Guest List</Text>
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Dropdown modal */}
+      <Modal visible={!!modal} transparent animationType="fade" onRequestClose={() => setModal(null)}>
+        <Pressable style={styles.overlay} onPress={() => setModal(null)}>
+          <View style={[styles.modal, { backgroundColor: colors.card }]}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>
+              {modal === "visit" ? "Visit Type" : "Access Method"}
+            </Text>
+            {(modal === "visit" ? VISIT_TYPES : ACCESS_METHODS).map((opt) => {
+              const active = modal === "visit" ? opt === visitType : opt === accessMethod;
+              const icon = modal === "visit" ? VISIT_ICON[opt] : ACCESS_ICON[opt];
+              return (
+                <TouchableOpacity
+                  key={opt}
+                  style={[
+                    styles.modalItem,
+                    active && { backgroundColor: isDark ? "rgba(58,169,240,0.15)" : "#f0f9ff" },
+                  ]}
+                  onPress={() => {
+                    if (modal === "visit") setVisitType(opt);
+                    else setAccessMethod(opt);
+                    setModal(null);
+                  }}
+                >
+                  <View style={[styles.modalIcon, { backgroundColor: "#e0f2fe" }]}>
+                    <Ionicons name={icon} size={17} color="#159df8" />
+                  </View>
+                  <Text style={[styles.modalItemText, { color: colors.text }]}>{opt}</Text>
+                  {active && <Ionicons name="checkmark-circle" size={20} color="#159df8" />}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }
 
-/* -------------------- STYLES -------------------- */
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#f1f5f9" },
+  safe: { flex: 1 },
   scroll: { padding: 18, paddingBottom: 40 },
   card: {
-    backgroundColor: "#fff",
     borderRadius: 22,
     padding: 18,
     marginBottom: 16,
@@ -365,74 +327,46 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 13.5,
     fontWeight: "700",
-    color: "#475569",
     marginBottom: 7,
     marginLeft: 2,
   },
-  row: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  dateField: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#f8fafc",
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: "#e2e8f0",
-    paddingHorizontal: 12,
-    height: 54,
-    marginBottom: 16,
-  },
-  dateText: {
-    fontSize: 13.5,
-    color: "#0f172a",
-    fontWeight: "600",
-    flex: 1,
-  },
-  personRow: {
+  row: { flexDirection: "row", gap: 12 },
+  selector: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    marginBottom: 12,
-  },
-  personInput: {
-    flex: 1,
-    backgroundColor: "#f8fafc",
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: "#e2e8f0",
-    paddingHorizontal: 12,
-    height: 48,
-    fontSize: 15,
-    color: "#0f172a",
-  },
-  removeBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    backgroundColor: "#ef4444",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  addBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    paddingVertical: 12,
     borderRadius: 14,
     borderWidth: 1.5,
-    borderColor: "#bae6fd",
-    borderStyle: "dashed",
-    backgroundColor: "#f0f9ff",
-    marginTop: 4,
+    paddingHorizontal: 14,
+    height: 54,
   },
-  addBtnText: {
-    color: "#159df8",
-    fontWeight: "700",
-    fontSize: 14,
+  selectorText: { flex: 1, fontSize: 14.5, fontWeight: "600" },
+
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(15,23,42,0.45)",
+    justifyContent: "center",
+    paddingHorizontal: 32,
   },
+  modal: { borderRadius: 20, padding: 16 },
+  modalTitle: { fontSize: 16, fontWeight: "800", marginBottom: 8, marginLeft: 4 },
+  modalItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingVertical: 11,
+    paddingHorizontal: 10,
+    borderRadius: 14,
+  },
+  modalIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalItemText: { flex: 1, fontSize: 15, fontWeight: "600" },
+
   listBtn: {
     flexDirection: "row",
     alignItems: "center",
@@ -445,9 +379,5 @@ const styles = StyleSheet.create({
     borderColor: "#bae6fd",
     backgroundColor: "#f0f9ff",
   },
-  listBtnText: {
-    color: "#159df8",
-    fontWeight: "700",
-    fontSize: 15,
-  },
+  listBtnText: { color: "#159df8", fontWeight: "700", fontSize: 15 },
 });

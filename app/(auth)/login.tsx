@@ -16,11 +16,13 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
 import { api } from "../../lib/api";
 
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
+  const { colors, isDark } = useTheme();
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -76,7 +78,7 @@ export default function LoginPage() {
     <>
       <Stack.Screen options={{ headerShown: false }} />
 
-      <View style={styles.root}>
+      <View style={[styles.root, { backgroundColor: colors.bg }]}>
         {/* Gradient hero */}
         <LinearGradient
           colors={["#159df8", "#0b7dd0", "#0a64b8"]}
@@ -96,7 +98,7 @@ export default function LoginPage() {
                 resizeMode="contain"
               />
             </View>
-            <Text style={styles.heroTitle}>Welcome to Residoo</Text>
+            <Text style={styles.heroTitle}>Welcome to ACL</Text>
             <Text style={styles.heroSubtitle}>A complete platform for smarter living</Text>
           </SafeAreaView>
         </LinearGradient>
@@ -111,9 +113,20 @@ export default function LoginPage() {
             showsVerticalScrollIndicator={false}
           >
             {/* Floating card */}
-            <View style={styles.card}>
-              <Text style={styles.cardTitle}>Sign in</Text>
-              <Text style={styles.cardSubtitle}>Log in to manage your residence</Text>
+            <View style={[styles.card, { backgroundColor: colors.card }]}>
+              <View style={styles.titleWrap}>
+                <View
+                  style={[
+                    styles.titleIcon,
+                    { backgroundColor: isDark ? "#0f2942" : "#e0f2fe" },
+                  ]}
+                >
+                  <Ionicons name="lock-closed" size={22} color="#159df8" />
+                </View>
+                <Text style={[styles.cardTitle, { color: colors.text }]}>Sign In</Text>
+                <View style={styles.titleAccent} />
+                <Text style={styles.cardSubtitle}>Login to manage your residence</Text>
+              </View>
 
               {errors.general ? (
                 <View style={styles.generalError}>
@@ -126,14 +139,15 @@ export default function LoginPage() {
               <View
                 style={[
                   styles.inputWrapper,
-                  focused === "username" && styles.inputWrapperFocused,
-                  errors.username && styles.inputWrapperError,
+                  { backgroundColor: colors.inputBg, borderColor: colors.border },
+                  focused === "username" && { borderColor: colors.primary },
+                  errors.username && { borderColor: "#f43f5e" },
                 ]}
               >
                 <Ionicons
                   name="person-outline"
                   size={20}
-                  color={focused === "username" ? "#159df8" : "#94a3b8"}
+                  color={focused === "username" ? colors.primary : colors.muted}
                   style={styles.inputIcon}
                 />
                 <TextInput
@@ -142,9 +156,9 @@ export default function LoginPage() {
                   onFocus={() => setFocused("username")}
                   onBlur={() => setFocused(null)}
                   placeholder="Username"
-                  placeholderTextColor="#94a3b8"
+                  placeholderTextColor={colors.muted}
                   autoCapitalize="none"
-                  style={styles.input}
+                  style={[styles.input, { color: colors.text }]}
                 />
               </View>
               {errors.username ? <Text style={styles.fieldError}>{errors.username}</Text> : null}
@@ -153,15 +167,15 @@ export default function LoginPage() {
               <View
                 style={[
                   styles.inputWrapper,
-                  { marginTop: 16 },
-                  focused === "password" && styles.inputWrapperFocused,
-                  errors.password && styles.inputWrapperError,
+                  { marginTop: 16, backgroundColor: colors.inputBg, borderColor: colors.border },
+                  focused === "password" && { borderColor: colors.primary },
+                  errors.password && { borderColor: "#f43f5e" },
                 ]}
               >
                 <Ionicons
                   name="lock-closed-outline"
                   size={20}
-                  color={focused === "password" ? "#159df8" : "#94a3b8"}
+                  color={focused === "password" ? colors.primary : colors.muted}
                   style={styles.inputIcon}
                 />
                 <TextInput
@@ -170,9 +184,9 @@ export default function LoginPage() {
                   onFocus={() => setFocused("password")}
                   onBlur={() => setFocused(null)}
                   placeholder="Password"
-                  placeholderTextColor="#94a3b8"
+                  placeholderTextColor={colors.muted}
                   secureTextEntry={!showPassword}
-                  style={styles.input}
+                  style={[styles.input, { color: colors.text }]}
                 />
                 <Pressable
                   hitSlop={10}
@@ -212,7 +226,7 @@ export default function LoginPage() {
               </Pressable>
             </View>
 
-            <Text style={styles.footer}>Residoo — Developed by MNP Techs.</Text>
+            <Text style={styles.footer}>ACL — Developed by MNP Techs.</Text>
           </ScrollView>
         </KeyboardAvoidingView>
       </View>
@@ -295,23 +309,47 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 24,
     padding: 24,
-    marginTop: -50,
+    paddingTop: 30,
+    marginTop: -24,
     shadowColor: "#0f172a",
     shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.12,
     shadowRadius: 24,
     elevation: 10,
   },
+  titleWrap: {
+    alignItems: "center",
+    marginBottom: 24,
+  },
+  titleIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 18,
+    backgroundColor: "#e0f2fe",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 14,
+  },
   cardTitle: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: "800",
     color: "#0f172a",
+    letterSpacing: -0.3,
+    textAlign: "center",
+  },
+  titleAccent: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: "#159df8",
+    marginTop: 10,
   },
   cardSubtitle: {
-    fontSize: 14,
+    fontSize: 14.5,
     color: "#64748b",
-    marginTop: 4,
-    marginBottom: 24,
+    fontWeight: "500",
+    marginTop: 10,
+    textAlign: "center",
   },
   generalError: {
     flexDirection: "row",

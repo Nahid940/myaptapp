@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import { useTheme } from "@/context/ThemeContext";
 
 type IconName = React.ComponentProps<typeof Ionicons>["name"];
 
@@ -36,11 +37,12 @@ export function Field({
 }: FieldProps) {
   const [focused, setFocused] = useState(false);
   const [show, setShow] = useState(false);
+  const { colors } = useTheme();
 
   return (
     <View style={[{ marginBottom: 16 }, containerStyle]}>
       {label ? (
-        <Text style={styles.label}>
+        <Text style={[styles.label, { color: colors.text }]}>
           {label}
           {required ? <Text style={styles.req}> *</Text> : null}
         </Text>
@@ -49,16 +51,17 @@ export function Field({
       <View
         style={[
           styles.wrapper,
+          { backgroundColor: colors.inputBg, borderColor: colors.border },
           multiline && styles.wrapperMultiline,
-          focused && styles.wrapperFocused,
-          !!error && styles.wrapperError,
+          focused && { borderColor: colors.primary },
+          !!error && { borderColor: "#f43f5e" },
         ]}
       >
         {icon ? (
           <Ionicons
             name={icon}
             size={20}
-            color={focused ? "#159df8" : "#94a3b8"}
+            color={focused ? colors.primary : colors.muted}
             style={[styles.icon, multiline && { marginTop: 14 }]}
           />
         ) : null}
@@ -66,7 +69,7 @@ export function Field({
         <TextInput
           {...inputProps}
           multiline={multiline}
-          placeholderTextColor="#94a3b8"
+          placeholderTextColor={colors.muted}
           secureTextEntry={isPassword && !show}
           onFocus={(e) => {
             setFocused(true);
@@ -76,12 +79,12 @@ export function Field({
             setFocused(false);
             inputProps.onBlur?.(e);
           }}
-          style={[styles.input, multiline && styles.inputMultiline]}
+          style={[styles.input, { color: colors.text }, multiline && styles.inputMultiline]}
         />
 
         {isPassword ? (
           <Pressable hitSlop={10} onPress={() => setShow((s) => !s)} style={styles.eye}>
-            <Ionicons name={show ? "eye-off-outline" : "eye-outline"} size={20} color="#94a3b8" />
+            <Ionicons name={show ? "eye-off-outline" : "eye-outline"} size={20} color={colors.muted} />
           </Pressable>
         ) : null}
       </View>
@@ -144,13 +147,14 @@ export function FormHeader({
   subtitle?: string;
   icon: IconName;
 }) {
+  const { colors } = useTheme();
   return (
     <View style={styles.header}>
       <View style={styles.headerIcon}>
         <Ionicons name={icon} size={26} color="#159df8" />
       </View>
       <View style={{ flex: 1 }}>
-        <Text style={styles.headerTitle}>{title}</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>{title}</Text>
         {subtitle ? <Text style={styles.headerSubtitle}>{subtitle}</Text> : null}
       </View>
     </View>

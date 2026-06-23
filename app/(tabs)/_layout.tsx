@@ -3,6 +3,7 @@ import { Tabs, Redirect } from "expo-router";
 import { View, Pressable, Text, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "@/context/AuthContext";
+import { useTheme } from "@/context/ThemeContext";
 
 type Meta = {
   label: string;
@@ -12,16 +13,22 @@ type Meta = {
 
 const TAB_META: Record<string, Meta> = {
   index: { label: "Home", icon: "home-outline", activeIcon: "home" },
-  tickets: { label: "Ticket", icon: "ticket-outline", activeIcon: "ticket" },
-  guestRegister: { label: "Guest", icon: "person-add-outline", activeIcon: "person-add" },
-  account: { label: "Profile", icon: "person-outline", activeIcon: "person" },
+  invoices: { label: "Invoice", icon: "document-text-outline", activeIcon: "document-text" },
+  payments: { label: "Payments", icon: "wallet-outline", activeIcon: "wallet" },
+  more: { label: "More", icon: "grid-outline", activeIcon: "grid" },
 };
 
 function CustomTabBar({ state, navigation }: any) {
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useTheme();
 
   return (
-    <View style={[styles.bar, { paddingBottom: insets.bottom ? insets.bottom : 12 }]}>
+    <View
+      style={[
+        styles.bar,
+        { backgroundColor: colors.card, paddingBottom: insets.bottom ? insets.bottom : 12 },
+      ]}
+    >
       <View style={styles.barInner}>
         {state.routes.map((route: any, index: number) => {
           const meta = TAB_META[route.name];
@@ -47,13 +54,25 @@ function CustomTabBar({ state, navigation }: any) {
               style={styles.tab}
               android_ripple={{ color: "transparent" }}
             >
-              <View style={[styles.item, focused && styles.itemActive]}>
+              <View
+                style={[
+                  styles.item,
+                  focused && {
+                    backgroundColor: isDark ? "rgba(58,169,240,0.18)" : "#e0f2fe",
+                  },
+                ]}
+              >
                 <Ionicons
                   name={focused ? meta.activeIcon : meta.icon}
                   size={23}
-                  color={focused ? "#159df8" : "#94a3b8"}
+                  color={focused ? colors.primary : colors.muted}
                 />
-                <Text style={[styles.label, focused && styles.labelActive]}>
+                <Text
+                  style={[
+                    styles.label,
+                    { color: focused ? colors.primary : colors.muted, fontWeight: focused ? "700" : "600" },
+                  ]}
+                >
                   {meta.label}
                 </Text>
               </View>
@@ -81,6 +100,10 @@ export default function TabLayout() {
       tabBar={(props) => <CustomTabBar {...props} />}
     >
       <Tabs.Screen name="index" options={{ title: "Home" }} />
+      <Tabs.Screen name="invoices" options={{ title: "Invoices" }} />
+      <Tabs.Screen name="payments" options={{ title: "Payments" }} />
+      <Tabs.Screen name="more" options={{ title: "More" }} />
+      {/* Routable but no tab button (reached from menus / greeting) */}
       <Tabs.Screen name="tickets" options={{ title: "New Ticket" }} />
       <Tabs.Screen name="guestRegister" options={{ title: "Guest Register" }} />
       <Tabs.Screen name="account" options={{ title: "Profile" }} />

@@ -1,17 +1,23 @@
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import * as SecureStore from "expo-secure-store";
+import * as FileSystem from "expo-file-system/legacy";
+import * as Sharing from "expo-sharing";
 import { api } from "../../lib/api";
+import { useTheme } from "@/context/ThemeContext";
 
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",
@@ -49,6 +55,7 @@ const statusStyle = (status?: string) => {
 
 export default function InvoicesScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
   const now = new Date();
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [year, setYear] = useState(now.getFullYear());
@@ -56,6 +63,7 @@ export default function InvoicesScreen() {
   const [loading, setLoading] = useState(true);
   const [currency, setCurrency] = useState("");
   const [data, setData] = useState<any>(null);
+  const [downloadingId, setDownloadingId] = useState<number | null>(null);
 
   const label = `${MONTHS[month - 1]} ${year}`;
 
@@ -63,6 +71,48 @@ export default function InvoicesScreen() {
     v === undefined || v === null
       ? "—"
       : `${currency ? currency + " " : ""}${Number(v).toLocaleString()}`;
+
+  const handlePay = (_item?: any) => {
+    router.push("/pay-rent" as any);
+  };
+
+  const handleDownload = async (item: any) => {
+    if (!item?.id) {
+      Alert.alert("Unavailable", "No invoice available to download for this period.");
+      return;
+    }
+    try {
+      setDownloadingId(item.id);
+      const token = await SecureStore.getItemAsync("token");
+      const url = `${api.baseUrl}/invoices/${item.id}/pdf?download=1`;
+      const fileUri = `${FileSystem.documentDirectory}invoice-${item.id}.pdf`;
+
+      const { uri, status } = await FileSystem.downloadAsync(url, fileUri, {
+        headers: token
+          ? { Authorization: `Bearer ${token}`, Accept: "application/pdf" }
+          : undefined,
+      });
+
+      if (status !== 200) {
+        Alert.alert("Error", "Could not download the invoice. Please try again.");
+        return;
+      }
+
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(uri, {
+          mimeType: "application/pdf",
+          dialogTitle: "Invoice",
+          UTI: "com.adobe.pdf",
+        });
+      } else {
+        Alert.alert("Downloaded", "Invoice saved to the app's documents folder.");
+      }
+    } catch (err) {
+      Alert.alert("Error", "Failed to download invoice. Please check your connection.");
+    } finally {
+      setDownloadingId(null);
+    }
+  };
 
   const fetchInvoices = async (m: number, y: number) => {
     setLoading(true);
@@ -99,25 +149,31 @@ export default function InvoicesScreen() {
   const rows: any[] =
     data?.charges?.length > 0 ? data.charges : data?.invoice ? [data.invoice] : [];
 
+  const hasAmount = !loading && Number(data?.month_subtotal) > 0;
+
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.bg }]} edges={["top"]}>
       {/* Navbar */}
       <View style={styles.navbar}>
-        <Pressable hitSlop={10} onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={22} color="#0f172a" />
+        <Pressable
+          hitSlop={10}
+          onPress={() => router.back()}
+          style={[styles.backBtn, { backgroundColor: colors.card }]}
+        >
+          <Ionicons name="arrow-back" size={22} color={colors.text} />
         </Pressable>
-        <Text style={styles.navTitle}>My Invoices</Text>
+        <Text style={[styles.navTitle, { color: colors.text }]}>My Invoices</Text>
         <View style={{ width: 38 }} />
       </View>
 
       {/* Month navigator */}
-      <View style={styles.monthNav}>
+      <View style={[styles.monthNav, { backgroundColor: colors.card }]}>
         <Pressable style={styles.navArrow} onPress={() => changeMonth(-1)} hitSlop={6}>
           <Ionicons name="chevron-back" size={22} color="#159df8" />
         </Pressable>
         <View style={styles.monthCenter}>
           <Ionicons name="calendar" size={16} color="#159df8" />
-          <Text style={styles.monthText}>{label}</Text>
+          <Text style={[styles.monthText, { color: colors.text }]}>{label}</Text>
         </View>
         <Pressable style={styles.navArrow} onPress={() => changeMonth(1)} hitSlop={6}>
           <Ionicons name="chevron-forward" size={22} color="#159df8" />
@@ -136,25 +192,60 @@ export default function InvoicesScreen() {
           style={styles.hero}
         >
           <View style={styles.heroCircle} />
-          <Text style={styles.heroLabel}>Balance for {label}</Text>
-          <Text style={styles.heroBalance}>
-            {loading ? "…" : money(data?.month_balance)}
-          </Text>
-          <View style={styles.heroRow}>
-            <View>
-              <Text style={styles.heroSmall}>Invoiced</Text>
-              <Text style={styles.heroValue}>{money(data?.month_subtotal)}</Text>
+          <View style={styles.heroMain}>
+            {/* Left: invoice total amount */}
+            <View style={{ flex: 1 }}>
+              <Text style={styles.heroLabel}>Invoice Total · {label}</Text>
+              <Text style={styles.heroBalance}>
+                {loading ? "…" : money(data?.month_subtotal)}
+              </Text>
+              <View style={styles.heroMeta}>
+                <Text style={styles.heroMetaText}>Paid {money(data?.month_paid)}</Text>
+                <Text style={styles.heroMetaDot}>•</Text>
+                <Text style={styles.heroMetaText}>Bal {money(data?.month_balance)}</Text>
+              </View>
             </View>
-            <View style={styles.heroVLine} />
-            <View>
-              <Text style={styles.heroSmall}>Paid</Text>
-              <Text style={styles.heroValue}>{money(data?.month_paid)}</Text>
-            </View>
+
+            {/* Right: Pay Now / Download Invoice (only when there's an amount) */}
+            {hasAmount && (
+              <View style={styles.heroBtnCol}>
+                <TouchableOpacity
+                  style={styles.heroPayBtn}
+                  activeOpacity={0.85}
+                  onPress={() =>
+                    handlePay({
+                      type_label: label,
+                      amount: data?.month_subtotal,
+                      balance: data?.month_balance,
+                    })
+                  }
+                >
+                  <Ionicons name="card" size={15} color="#159df8" />
+                  <Text style={styles.heroPayText}>Pay Now</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.heroDlBtn}
+                  activeOpacity={0.85}
+                  disabled={downloadingId === data?.invoice?.id}
+                  onPress={() => handleDownload(data?.invoice)}
+                >
+                  {downloadingId === data?.invoice?.id ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <Ionicons name="download-outline" size={15} color="#fff" />
+                  )}
+                  <Text style={styles.heroDlText}>
+                    {downloadingId === data?.invoice?.id ? "…" : "Download Invoice"}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
         </LinearGradient>
 
         {/* Charges */}
-        <Text style={styles.sectionTitle}>Charges</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Charges</Text>
 
         {loading ? (
           <ActivityIndicator size="large" color="#159df8" style={{ marginTop: 30 }} />
@@ -168,13 +259,15 @@ export default function InvoicesScreen() {
             const meta = TYPE_META[(item.type || "").toLowerCase()] ?? TYPE_META.default;
             const ss = statusStyle(item.status);
             return (
-              <View key={item.id ?? index} style={styles.card}>
+              <View key={item.id ?? index} style={[styles.card, { backgroundColor: colors.card }]}>
                 <View style={[styles.cardIcon, { backgroundColor: meta.bg }]}>
                   <Ionicons name={meta.icon} size={22} color={meta.color} />
                 </View>
 
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.cardTitle}>{item.type_label ?? item.type ?? "Charge"}</Text>
+                  <Text style={[styles.cardTitle, { color: colors.text }]}>
+                    {item.type_label ?? item.type ?? "Charge"}
+                  </Text>
                   <View style={styles.metaRow}>
                     <Ionicons name="calendar-outline" size={12} color="#94a3b8" />
                     <Text style={styles.metaText}>{item.date}</Text>
@@ -187,7 +280,7 @@ export default function InvoicesScreen() {
                 </View>
 
                 <View style={{ alignItems: "flex-end" }}>
-                  <Text style={styles.cardAmount}>{money(item.amount)}</Text>
+                  <Text style={[styles.cardAmount, { color: colors.text }]}>{money(item.amount)}</Text>
                   <View style={[styles.badge, { backgroundColor: ss.bg }]}>
                     <Text style={[styles.badgeText, { color: ss.color }]}>
                       {String(item.status || "—").toUpperCase()}
@@ -336,6 +429,35 @@ const styles = StyleSheet.create({
   },
   badgeText: { fontSize: 10.5, fontWeight: "800" },
   balance: { fontSize: 11.5, color: "#dc2626", fontWeight: "700", marginTop: 4 },
+
+  /* Hero buttons */
+  heroMain: { flexDirection: "row", alignItems: "center", gap: 14 },
+  heroMeta: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 8 },
+  heroMetaText: { color: "rgba(255,255,255,0.9)", fontSize: 12.5, fontWeight: "600" },
+  heroMetaDot: { color: "rgba(255,255,255,0.6)", fontSize: 12 },
+  heroBtnCol: { gap: 8, width: 150 },
+  heroPayBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    backgroundColor: "#fff",
+    paddingVertical: 11,
+    borderRadius: 12,
+  },
+  heroPayText: { color: "#159df8", fontWeight: "800", fontSize: 13.5 },
+  heroDlBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    backgroundColor: "rgba(255,255,255,0.18)",
+    borderWidth: 1.5,
+    borderColor: "rgba(255,255,255,0.5)",
+    paddingVertical: 10,
+    borderRadius: 12,
+  },
+  heroDlText: { color: "#fff", fontWeight: "700", fontSize: 12.5 },
 
   empty: { alignItems: "center", paddingVertical: 50, gap: 12 },
   emptyText: { color: "#94a3b8", fontSize: 15, fontWeight: "600" },

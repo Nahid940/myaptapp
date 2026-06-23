@@ -59,20 +59,11 @@ export default function UtilitiesList() {
     setLoading(true);
     try {
       const res = await api.get(`/utilities/${utilityType}`);
-      // unwrap possible envelopes
-      const u = res?.utility ?? res?.data?.utility ?? res?.data ?? res ?? {};
-      const typeData = u?.[utilityType] ?? u ?? {};
+      const list = res?.readings ?? res?.data ?? [];
 
-      setCurrency(u?.currency ?? res?.currency ?? "");
-      setCount(typeData?.count ?? 0);
-      setTotalCharge(typeData?.total_charge ?? null);
-
-      // prefer a full list if the API provides one, else use `latest`
-      const list =
-        typeData?.bills ??
-        typeData?.list ??
-        typeData?.data ??
-        (typeData?.latest ? [typeData.latest] : []);
+      setCurrency(res?.currency ?? "");
+      setCount(res?.count ?? (Array.isArray(list) ? list.length : 0));
+      setTotalCharge(res?.total_charge ?? null);
       setBills(Array.isArray(list) ? list : []);
     } catch (err) {
       setBills([]);
@@ -171,9 +162,20 @@ export default function UtilitiesList() {
                   {item.consumption !== undefined && (
                     <View style={styles.consumptionRow}>
                       <Ionicons name="speedometer-outline" size={13} color="#64748b" />
-                      <Text style={styles.cardSub}>{item.consumption} units</Text>
+                      <Text style={styles.cardSub}>
+                        {item.consumption} units
+                        {item.previous_reading != null && item.current_reading != null
+                          ? `  ·  ${item.previous_reading}→${item.current_reading}`
+                          : ""}
+                      </Text>
                     </View>
                   )}
+                  {item.reading_date ? (
+                    <Text style={styles.cardDate}>
+                      {item.reading_date}
+                      {item.rate != null ? `  ·  @ ${money(item.rate)}/unit` : ""}
+                    </Text>
+                  ) : null}
                 </View>
 
                 <View style={{ alignItems: "flex-end" }}>
@@ -310,6 +312,7 @@ const styles = StyleSheet.create({
   cardPeriod: { fontSize: 15.5, fontWeight: "700", color: "#0f172a" },
   consumptionRow: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 3 },
   cardSub: { fontSize: 13, color: "#64748b" },
+  cardDate: { fontSize: 11.5, color: "#94a3b8", marginTop: 3, fontWeight: "600" },
   cardAmount: { fontSize: 16, fontWeight: "800" },
   viewRow: { flexDirection: "row", alignItems: "center", gap: 2, marginTop: 4 },
   viewText: { fontSize: 12, color: "#94a3b8", fontWeight: "600" },

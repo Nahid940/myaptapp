@@ -1,25 +1,31 @@
-import {DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { DefaultTheme, DarkTheme, ThemeProvider as NavThemeProvider } from '@react-navigation/native';
 
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { useColorScheme, ActivityIndicator, View  } from "react-native";
-import { Stack, Redirect } from 'expo-router';
+import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
-import { AuthProvider, useAuth } from '@/context/AuthContext';
-// import AuthGuard from '../components/auth-guard';
+import { AuthProvider } from '@/context/AuthContext';
+import { ThemeProvider, useTheme } from '@/context/ThemeContext';
 
-
-export default function RootLayout() {
-  const colorScheme = useColorScheme();
+function RootContent() {
+  const { isDark } = useTheme();
 
   return (
+    <NavThemeProvider value={isDark ? DarkTheme : DefaultTheme}>
+      <AuthProvider>
+        <StatusBar hidden={false} style={isDark ? "light" : "dark"} />
+        <Stack screenOptions={{ headerShown: false }} />
+      </AuthProvider>
+    </NavThemeProvider>
+  );
+}
+
+export default function RootLayout() {
+  return (
     <SafeAreaProvider>
-      <ThemeProvider value={colorScheme === 'dark' ? DefaultTheme : DefaultTheme}>
-        <AuthProvider>
-          <StatusBar hidden={false} style={"dark"}/>
-            <Stack screenOptions={{ headerShown: false }}></Stack>
-        </AuthProvider>
+      <ThemeProvider>
+        <RootContent />
       </ThemeProvider>
-      </SafeAreaProvider>
+    </SafeAreaProvider>
   );
 }

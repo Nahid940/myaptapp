@@ -88,10 +88,10 @@ export default function UtilityBillDetails() {
   const fetchBill = async () => {
     setLoading(true);
     try {
-      const response = await api.get(`/utilities/${type}/${params.id}`);
-      const data = response?.utility ?? response?.data ?? response;
-      setCurrency(response?.currency ?? response?.data?.currency ?? data?.currency ?? "");
-      setBill(data?.[type] ?? data);
+      const response = await api.get(`/utility/${params.id}`);
+      const data = response?.reading ?? response?.data ?? response;
+      setCurrency(data?.currency ?? response?.currency ?? "");
+      setBill(data);
     } catch (err) {
       // console.error("Error fetching utility bill:", err);
     } finally {

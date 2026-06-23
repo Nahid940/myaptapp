@@ -14,6 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { api } from "../../lib/api";
 import { useAuth } from "../../context/AuthContext";
 import { useRouter } from "expo-router";
+import { useTheme } from "../../context/ThemeContext";
 import { Field, PrimaryButton } from "@/components/ui/form";
 
 export default function UpdatePassword() {
@@ -23,6 +24,7 @@ export default function UpdatePassword() {
   const [loading, setLoading] = useState(false);
 
   const { logout } = useAuth();
+  const { colors } = useTheme();
   const router = useRouter();
 
   const handleSubmit = async () => {
@@ -59,12 +61,16 @@ export default function UpdatePassword() {
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.bg }]} edges={["top"]}>
       <View style={styles.navbar}>
-        <Pressable hitSlop={10} onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={22} color="#0f172a" />
+        <Pressable
+          hitSlop={10}
+          onPress={() => router.back()}
+          style={[styles.backBtn, { backgroundColor: colors.card }]}
+        >
+          <Ionicons name="arrow-back" size={22} color={colors.text} />
         </Pressable>
-        <Text style={styles.navTitle}>Update Password</Text>
+        <Text style={[styles.navTitle, { color: colors.text }]}>Update Password</Text>
         <View style={{ width: 38 }} />
       </View>
 
@@ -80,12 +86,12 @@ export default function UpdatePassword() {
           <View style={styles.iconBadge}>
             <Ionicons name="lock-closed" size={36} color="#159df8" />
           </View>
-          <Text style={styles.heading}>Change your password</Text>
+          <Text style={[styles.heading, { color: colors.text }]}>Change your password</Text>
           <Text style={styles.sub}>
             For your security, you'll be logged out after updating.
           </Text>
 
-          <View style={styles.card}>
+          <View style={[styles.card, { backgroundColor: colors.card }]}>
             <Field
               label="Current Password"
               icon="lock-closed-outline"

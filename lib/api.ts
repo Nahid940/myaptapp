@@ -69,4 +69,4 @@ class ApiService {
   }
 }
 
-export const api = new ApiService("https://alamana.residoo.net/api/v1");
+export const api = new ApiService("https://property.al-amana.co.ke/api/v1");
