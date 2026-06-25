@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import * as SecureStore from "expo-secure-store";
 import { api } from "../lib/api";
+import { syncPushToken } from "../lib/notifications";
 
 interface User {
   id?: number;
@@ -30,9 +31,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (!token) return setLoading(false);
 
       try {
-        const res = await api.get("/me", token);
+        const res = await api.get("/me");
         setUser({ ...res, token });
         setAuthToken(token);
+        syncPushToken();
       } catch (err) {
         // console.log("Failed to fetch /me:", err);
         await SecureStore.deleteItemAsync("token");
@@ -46,9 +48,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const login = async (token: string) => {
     try {
       await SecureStore.setItemAsync("token", token);
-      const res = await api.get("/me", token);
+      const res = await api.get("/me");
       setUser({ ...res, token });
       setAuthToken(token);
+      syncPushToken();
     } catch (err) {
       // console.log("Login failed:", err);
       await SecureStore.deleteItemAsync("token");

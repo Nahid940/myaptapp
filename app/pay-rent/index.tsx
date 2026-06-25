@@ -141,7 +141,7 @@ export default function PayRentScreen() {
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
       <ScrollView
         contentContainerStyle={{ padding: 18, paddingBottom: 30 }}

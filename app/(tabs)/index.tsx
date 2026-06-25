@@ -18,6 +18,23 @@ import NotificationsPopup from "@/components/ui/NotificationsPopup";
 import React, { useEffect, useState } from "react";
 import ImageSlider from "@/components/ui/homeSlider";
 
+const MONTHS = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
+
+// Formats a date string into "Month day, year" (e.g. "June 25, 2026").
+const formatDate = (value?: string) => {
+  if (!value) return "";
+  const iso = String(value).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) {
+    return `${MONTHS[Number(iso[2]) - 1]} ${Number(iso[3])}, ${iso[1]}`;
+  }
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return String(value);
+  return `${MONTHS[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+};
+
 const QUICK_MENUS: {
   title: string;
   icon: React.ComponentProps<typeof Ionicons>["name"];
@@ -191,7 +208,7 @@ export default function HomeScreen() {
 
             <View style={styles.headerLine} />
 
-            <Text style={styles.untilText}>Until {data.booking.end_date}</Text>
+            <Text style={styles.untilText}>Until {formatDate(data.booking.end_date)}</Text>
           </View>
 
           <Image
@@ -402,14 +419,14 @@ const styles = StyleSheet.create({
   headerLeft: { padding: 16, paddingRight: 150 },
   headerName: { fontSize: 13, fontWeight: "700", color: "#475569" },
   headerKicker: {
-    fontSize: 11,
+    fontSize: 13,
     fontWeight: "800",
     color: "#159df8",
     letterSpacing: 1.5,
     marginTop: 1,
   },
   headerBuilding: {
-    fontSize: 19,
+    fontSize: 22,
     fontWeight: "800",
     color: "#0f172a",
     marginTop: 5,
@@ -425,22 +442,22 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     marginTop: 8,
   },
-  aptBadgeText: { color: "#159df8", fontWeight: "800", fontSize: 13 },
+  aptBadgeText: { color: "#159df8", fontWeight: "800", fontSize: 14.5 },
   headerLine: {
     height: 1,
     backgroundColor: "rgba(15,23,42,0.10)",
     marginVertical: 10,
   },
-  rentLabel: { fontSize: 12, color: "#64748b", fontWeight: "600" },
-  rentAmount: { fontSize: 21, fontWeight: "800", color: "#0f172a", marginTop: 2 },
+  rentLabel: { fontSize: 13.5, color: "#64748b", fontWeight: "600" },
+  rentAmount: { fontSize: 24, fontWeight: "800", color: "#0f172a", marginTop: 2 },
   leaseActiveRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 5,
     marginTop: 8,
   },
-  leaseActiveText: { color: "#16a34a", fontWeight: "800", fontSize: 13.5 },
-  untilText: { fontSize: 12, color: "#64748b", fontWeight: "600" },
+  leaseActiveText: { color: "#16a34a", fontWeight: "800", fontSize: 15 },
+  untilText: { fontSize: 13.5, color: "#64748b", fontWeight: "600" },
   headerImg: {
     position: "absolute",
     right: 10,

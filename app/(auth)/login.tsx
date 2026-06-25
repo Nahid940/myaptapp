@@ -4,8 +4,6 @@ import {
   TextInput,
   Pressable,
   Text,
-  KeyboardAvoidingView,
-  Platform,
   StyleSheet,
   Image,
   ScrollView,
@@ -34,20 +32,11 @@ export default function LoginPage() {
   const handleLogin = async () => {
     setErrors({});
 
-    let valid = true;
     const newErrors: typeof errors = {};
+    if (!username.trim()) newErrors.username = "Please enter your username!";
+    if (!password) newErrors.password = "Please enter your password!";
 
-    if (!username.trim()) {
-      newErrors.username = "Please enter your username!";
-      valid = false;
-    }
-
-    if (!password) {
-      newErrors.password = "Please enter your password!";
-      valid = false;
-    }
-
-    if (!valid) {
+    if (newErrors.username || newErrors.password) {
       setErrors(newErrors);
       return;
     }
@@ -63,12 +52,10 @@ export default function LoginPage() {
         await login(response.token);
         router.replace("/(tabs)");
       } else {
-        newErrors.general = "Login Failed, Invalid credentials";
-        setErrors(newErrors);
+        setErrors({ general: "Login Failed, Invalid credentials" });
       }
-    } catch (error) {
-      newErrors.general = "Login Failed, Invalid credentials";
-      setErrors(newErrors);
+    } catch {
+      setErrors({ general: "Login Failed, Invalid credentials" });
     } finally {
       setLoading(false);
     }
@@ -79,180 +66,168 @@ export default function LoginPage() {
       <Stack.Screen options={{ headerShown: false }} />
 
       <View style={[styles.root, { backgroundColor: colors.bg }]}>
-        {/* Gradient hero */}
-        <LinearGradient
-          colors={["#159df8", "#0b7dd0", "#0a64b8"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.hero}
+        <ScrollView
+          style={styles.flex}
+          contentContainerStyle={styles.scroll}
+          keyboardShouldPersistTaps="handled"
+          automaticallyAdjustKeyboardInsets
+          showsVerticalScrollIndicator={false}
         >
-          {/* decorative circles */}
-          <View style={styles.circleOne} />
-          <View style={styles.circleTwo} />
+          {/* Gradient hero */}
+          <LinearGradient
+            colors={["#159df8", "#0b7dd0", "#0a64b8"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.hero}
+          >
+            <View style={styles.circleOne} />
+            <View style={styles.circleTwo} />
 
-          <SafeAreaView style={styles.heroContent}>
-            <View style={styles.logoBadge}>
-              <Image
-                source={require("../../assets/images/residdologo.png")}
-                style={styles.logo}
-                resizeMode="contain"
+            <SafeAreaView edges={["top"]} style={styles.heroContent}>
+              <View style={styles.logoBadge}>
+                <Image
+                  source={require("../../assets/images/residdologo.png")}
+                  style={styles.logo}
+                  resizeMode="contain"
+                />
+              </View>
+              <Text style={styles.heroTitle}>Welcome to ACL</Text>
+              <Text style={styles.heroSubtitle}>A complete platform for smarter living</Text>
+            </SafeAreaView>
+          </LinearGradient>
+
+          {/* Form */}
+          <View style={styles.form}>
+            <Text style={[styles.formTitle, { color: colors.text }]}>Sign In</Text>
+            <Text style={styles.formSubtitle}>Login to manage your residence</Text>
+
+            {errors.general ? (
+              <View style={styles.generalError}>
+                <Ionicons name="alert-circle" size={18} color="#e11d48" />
+                <Text style={styles.generalErrorText}>{errors.general}</Text>
+              </View>
+            ) : null}
+
+            {/* Username */}
+            <Text style={[styles.label, { color: colors.text }]}>Username</Text>
+            <View
+              style={[
+                styles.inputWrapper,
+                { backgroundColor: colors.inputBg, borderColor: colors.border },
+                focused === "username" && { borderColor: colors.primary },
+                errors.username && { borderColor: "#f43f5e" },
+              ]}
+            >
+              <Ionicons
+                name="person-outline"
+                size={20}
+                color={focused === "username" ? colors.primary : colors.muted}
+                style={styles.inputIcon}
+              />
+              <TextInput
+                value={username}
+                onChangeText={setUsername}
+                onFocus={() => setFocused("username")}
+                onBlur={() => setFocused(null)}
+                placeholder="Username"
+                placeholderTextColor={colors.muted}
+                autoCapitalize="none"
+                autoCorrect={false}
+                returnKeyType="next"
+                style={[styles.input, { color: colors.text }]}
               />
             </View>
-            <Text style={styles.heroTitle}>Welcome to ACL</Text>
-            <Text style={styles.heroSubtitle}>A complete platform for smarter living</Text>
-          </SafeAreaView>
-        </LinearGradient>
+            {errors.username ? <Text style={styles.fieldError}>{errors.username}</Text> : null}
 
-        <KeyboardAvoidingView
-          style={styles.flex}
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
-        >
-          <ScrollView
-            contentContainerStyle={styles.scroll}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-          >
-            {/* Floating card */}
-            <View style={[styles.card, { backgroundColor: colors.card }]}>
-              <View style={styles.titleWrap}>
-                <View
-                  style={[
-                    styles.titleIcon,
-                    { backgroundColor: isDark ? "#0f2942" : "#e0f2fe" },
-                  ]}
-                >
-                  <Ionicons name="lock-closed" size={22} color="#159df8" />
-                </View>
-                <Text style={[styles.cardTitle, { color: colors.text }]}>Sign In</Text>
-                <View style={styles.titleAccent} />
-                <Text style={styles.cardSubtitle}>Login to manage your residence</Text>
-              </View>
-
-              {errors.general ? (
-                <View style={styles.generalError}>
-                  <Ionicons name="alert-circle" size={18} color="#e11d48" />
-                  <Text style={styles.generalErrorText}>{errors.general}</Text>
-                </View>
-              ) : null}
-
-              {/* Username */}
-              <View
-                style={[
-                  styles.inputWrapper,
-                  { backgroundColor: colors.inputBg, borderColor: colors.border },
-                  focused === "username" && { borderColor: colors.primary },
-                  errors.username && { borderColor: "#f43f5e" },
-                ]}
-              >
+            {/* Password */}
+            <Text style={[styles.label, styles.labelSpaced, { color: colors.text }]}>Password</Text>
+            <View
+              style={[
+                styles.inputWrapper,
+                { backgroundColor: colors.inputBg, borderColor: colors.border },
+                focused === "password" && { borderColor: colors.primary },
+                errors.password && { borderColor: "#f43f5e" },
+              ]}
+            >
+              <Ionicons
+                name="lock-closed-outline"
+                size={20}
+                color={focused === "password" ? colors.primary : colors.muted}
+                style={styles.inputIcon}
+              />
+              <TextInput
+                value={password}
+                onChangeText={setPassword}
+                onFocus={() => setFocused("password")}
+                onBlur={() => setFocused(null)}
+                placeholder="Password"
+                placeholderTextColor={colors.muted}
+                secureTextEntry={!showPassword}
+                returnKeyType="go"
+                onSubmitEditing={handleLogin}
+                style={[styles.input, { color: colors.text }]}
+              />
+              <Pressable hitSlop={10} onPress={() => setShowPassword((s) => !s)} style={styles.eyeButton}>
                 <Ionicons
-                  name="person-outline"
+                  name={showPassword ? "eye-off-outline" : "eye-outline"}
                   size={20}
-                  color={focused === "username" ? colors.primary : colors.muted}
-                  style={styles.inputIcon}
+                  color={colors.muted}
                 />
-                <TextInput
-                  value={username}
-                  onChangeText={setUsername}
-                  onFocus={() => setFocused("username")}
-                  onBlur={() => setFocused(null)}
-                  placeholder="Username"
-                  placeholderTextColor={colors.muted}
-                  autoCapitalize="none"
-                  style={[styles.input, { color: colors.text }]}
-                />
-              </View>
-              {errors.username ? <Text style={styles.fieldError}>{errors.username}</Text> : null}
-
-              {/* Password */}
-              <View
-                style={[
-                  styles.inputWrapper,
-                  { marginTop: 16, backgroundColor: colors.inputBg, borderColor: colors.border },
-                  focused === "password" && { borderColor: colors.primary },
-                  errors.password && { borderColor: "#f43f5e" },
-                ]}
-              >
-                <Ionicons
-                  name="lock-closed-outline"
-                  size={20}
-                  color={focused === "password" ? colors.primary : colors.muted}
-                  style={styles.inputIcon}
-                />
-                <TextInput
-                  value={password}
-                  onChangeText={setPassword}
-                  onFocus={() => setFocused("password")}
-                  onBlur={() => setFocused(null)}
-                  placeholder="Password"
-                  placeholderTextColor={colors.muted}
-                  secureTextEntry={!showPassword}
-                  style={[styles.input, { color: colors.text }]}
-                />
-                <Pressable
-                  hitSlop={10}
-                  onPress={() => setShowPassword((s) => !s)}
-                  style={styles.eyeButton}
-                >
-                  <Ionicons
-                    name={showPassword ? "eye-off-outline" : "eye-outline"}
-                    size={20}
-                    color="#94a3b8"
-                  />
-                </Pressable>
-              </View>
-              {errors.password ? <Text style={styles.fieldError}>{errors.password}</Text> : null}
-
-              {/* Login button */}
-              <Pressable
-                onPress={handleLogin}
-                disabled={loading}
-                style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
-              >
-                <LinearGradient
-                  colors={loading ? ["#7cc4f3", "#7cc4f3"] : ["#159df8", "#0b7dd0"]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.buttonGradient}
-                >
-                  {loading ? (
-                    <ActivityIndicator color="#fff" />
-                  ) : (
-                    <>
-                      <Text style={styles.buttonText}>Login</Text>
-                      <Ionicons name="arrow-forward" size={20} color="#fff" />
-                    </>
-                  )}
-                </LinearGradient>
               </Pressable>
+            </View>
+            {errors.password ? <Text style={styles.fieldError}>{errors.password}</Text> : null}
+
+            {/* Login button */}
+            <Pressable
+              onPress={handleLogin}
+              disabled={loading}
+              style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
+            >
+              <LinearGradient
+                colors={loading ? ["#7cc4f3", "#7cc4f3"] : ["#159df8", "#0b7dd0"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.buttonGradient}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <>
+                    <Text style={styles.buttonText}>Login</Text>
+                    <Ionicons name="arrow-forward" size={20} color="#fff" />
+                  </>
+                )}
+              </LinearGradient>
+            </Pressable>
+
+            <View style={styles.secureNote}>
+              <Ionicons name="shield-checkmark" size={14} color="#16a34a" />
+              <Text style={styles.secureNoteText}>Your information is securely encrypted</Text>
             </View>
 
             <Text style={styles.footer}>ACL — Developed by MNP Techs.</Text>
-          </ScrollView>
-        </KeyboardAvoidingView>
+          </View>
+        </ScrollView>
       </View>
     </>
   );
 }
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: "#f1f5f9",
-  },
-  flex: {
-    flex: 1,
-  },
+  root: { flex: 1 },
+  flex: { flex: 1 },
+  scroll: { flexGrow: 1 },
+
   hero: {
-    height: 320,
-    borderBottomLeftRadius: 40,
-    borderBottomRightRadius: 40,
+    paddingBottom: 46,
+    borderBottomLeftRadius: 36,
+    borderBottomRightRadius: 36,
     overflow: "hidden",
   },
   heroContent: {
-    flex: 1,
     alignItems: "center",
-    justifyContent: "center",
-    paddingBottom: 60,
+    paddingTop: 24,
+    paddingBottom: 14,
   },
   circleOne: {
     position: "absolute",
@@ -273,84 +248,31 @@ const styles = StyleSheet.create({
     left: -30,
   },
   logoBadge: {
-    width: 110,
-    height: 110,
-    borderRadius: 30,
+    width: 104,
+    height: 104,
+    borderRadius: 28,
     backgroundColor: "#fff",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 18,
+    marginBottom: 16,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.2,
     shadowRadius: 12,
     elevation: 8,
   },
-  logo: {
-    width: 80,
-    height: 80,
-  },
-  heroTitle: {
-    fontSize: 26,
-    fontWeight: "800",
-    color: "#fff",
-    letterSpacing: 0.3,
-  },
-  heroSubtitle: {
-    fontSize: 14,
-    color: "rgba(255,255,255,0.9)",
-    marginTop: 6,
-  },
-  scroll: {
+  logo: { width: 76, height: 76 },
+  heroTitle: { fontSize: 26, fontWeight: "800", color: "#fff", letterSpacing: 0.3 },
+  heroSubtitle: { fontSize: 14, color: "rgba(255,255,255,0.9)", marginTop: 6 },
+
+  form: {
+    flex: 1,
     paddingHorizontal: 24,
-    paddingBottom: 30,
+    paddingTop: 28,
   },
-  card: {
-    backgroundColor: "#fff",
-    borderRadius: 24,
-    padding: 24,
-    paddingTop: 30,
-    marginTop: -24,
-    shadowColor: "#0f172a",
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.12,
-    shadowRadius: 24,
-    elevation: 10,
-  },
-  titleWrap: {
-    alignItems: "center",
-    marginBottom: 24,
-  },
-  titleIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 18,
-    backgroundColor: "#e0f2fe",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 14,
-  },
-  cardTitle: {
-    fontSize: 26,
-    fontWeight: "800",
-    color: "#0f172a",
-    letterSpacing: -0.3,
-    textAlign: "center",
-  },
-  titleAccent: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: "#159df8",
-    marginTop: 10,
-  },
-  cardSubtitle: {
-    fontSize: 14.5,
-    color: "#64748b",
-    fontWeight: "500",
-    marginTop: 10,
-    textAlign: "center",
-  },
+  formTitle: { fontSize: 26, fontWeight: "800", letterSpacing: -0.3, textAlign: "center" },
+  formSubtitle: { fontSize: 14.5, color: "#64748b", fontWeight: "500", marginTop: 4, marginBottom: 24, textAlign: "center" },
+
   generalError: {
     flexDirection: "row",
     alignItems: "center",
@@ -361,47 +283,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     marginBottom: 18,
   },
-  generalErrorText: {
-    color: "#e11d48",
-    fontSize: 14,
-    fontWeight: "600",
-    flex: 1,
-  },
+  generalErrorText: { color: "#e11d48", fontSize: 14, fontWeight: "600", flex: 1 },
+
+  label: { fontSize: 13, fontWeight: "700", marginBottom: 8, marginLeft: 2, letterSpacing: 0.2 },
+  labelSpaced: { marginTop: 18 },
   inputWrapper: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f8fafc",
     borderRadius: 14,
     borderWidth: 1.5,
-    borderColor: "#e2e8f0",
     paddingHorizontal: 14,
     height: 56,
   },
-  inputWrapperFocused: {
-    borderColor: "#159df8",
-    backgroundColor: "#fff",
-  },
-  inputWrapperError: {
-    borderColor: "#f43f5e",
-  },
-  inputIcon: {
-    marginRight: 10,
-  },
-  input: {
-    flex: 1,
-    fontSize: 16,
-    color: "#0f172a",
-    height: "100%",
-  },
-  eyeButton: {
-    paddingLeft: 8,
-  },
-  fieldError: {
-    color: "#e11d48",
-    fontSize: 13,
-    marginTop: 6,
-    marginLeft: 4,
-  },
+  inputIcon: { marginRight: 10 },
+  input: { flex: 1, fontSize: 16, height: "100%" },
+  eyeButton: { paddingLeft: 8 },
+  fieldError: { color: "#e11d48", fontSize: 13, marginTop: 6, marginLeft: 4 },
+
   button: {
     marginTop: 28,
     borderRadius: 14,
@@ -412,10 +310,7 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 6,
   },
-  buttonPressed: {
-    opacity: 0.9,
-    transform: [{ scale: 0.99 }],
-  },
+  buttonPressed: { opacity: 0.9, transform: [{ scale: 0.99 }] },
   buttonGradient: {
     height: 56,
     borderRadius: 14,
@@ -424,16 +319,23 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 8,
   },
-  buttonText: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "700",
+  buttonText: { color: "#fff", fontSize: 18, fontWeight: "700" },
+
+  secureNote: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    marginTop: 18,
   },
+  secureNoteText: { color: "#94a3b8", fontSize: 12, fontWeight: "600" },
+
   footer: {
     textAlign: "center",
     color: "#94a3b8",
     fontSize: 12,
     fontWeight: "600",
     marginTop: 24,
+    marginBottom: 16,
   },
 });

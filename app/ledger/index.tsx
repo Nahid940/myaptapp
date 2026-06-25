@@ -46,8 +46,27 @@ export default function LedgerScreen() {
           maximumFractionDigits: 2,
         })}`;
 
-  const net = summary?.net_balance ?? 0;
-  const netNegative = Number(net) < 0;
+  const isSecurity = (item: any) => {
+    const type = `${item?.ledger_type ?? item?.type ?? item?.category ?? ""}`.toLowerCase();
+    if (type.includes("security")) return true;
+    const desc = `${item?.description ?? ""}`.toLowerCase();
+    return desc.includes("security deposit") || desc.includes("security bill");
+  };
+  const ledgerRows = rows.filter((item) => !isSecurity(item));
+  const depositRows = rows.filter(isSecurity);
+  const depositAmount = depositRows.reduce((sum, item) => {
+    const val =
+      item.credit ?? item.debit ?? item.balance ?? item.amount ?? 0;
+    return sum + Number(val || 0);
+  }, 0);
+  const hasDeposit = depositRows.length > 0 && depositAmount > 0;
+
+  // Totals computed from the visible rows only, so the security deposit
+  // is excluded from debits, credits and the net balance.
+  const totalDebit = ledgerRows.reduce((sum, i) => sum + Number(i.debit || 0), 0);
+  const totalCredit = ledgerRows.reduce((sum, i) => sum + Number(i.credit || 0), 0);
+  const net = totalDebit - totalCredit;
+  const netNegative = net < 0;
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
@@ -76,13 +95,13 @@ export default function LedgerScreen() {
               <Text style={[styles.cellNum, styles.headerText]}>Credit</Text>
             </View>
 
-            {rows.length === 0 ? (
+            {ledgerRows.length === 0 ? (
               <View style={styles.empty}>
                 <Ionicons name="book-outline" size={44} color="#cbd5e1" />
                 <Text style={styles.emptyText}>No ledger entries</Text>
               </View>
             ) : (
-              rows.map((item, index) => {
+              ledgerRows.map((item, index) => {
                 const debit = money(item.debit, false);
                 const credit = money(item.credit, false);
                 return (
@@ -91,7 +110,7 @@ export default function LedgerScreen() {
                     style={[
                       styles.row,
                       index % 2 === 1 && styles.rowAlt,
-                      index === rows.length - 1 && { borderBottomWidth: 0 },
+                      index === ledgerRows.length - 1 && { borderBottomWidth: 0 },
                     ]}
                   >
                     <View style={styles.cellDesc}>
@@ -121,20 +140,33 @@ export default function LedgerScreen() {
             )}
           </View>
 
-          {/* Summary below the ledger */}
+          {/* Security deposit card */}
+          {hasDeposit && (
+            <View style={styles.depositCard}>
+              <View style={styles.depositIcon}>
+                <Ionicons name="shield-checkmark" size={22} color="#159df8" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.depositLabel}>You have Security Deposit</Text>
+                <Text style={styles.depositValue}>{money(depositAmount)}</Text>
+              </View>
+            </View>
+          )}
+
+          {/* Summary below the ledger (security deposit excluded) */}
           {summary && (
             <View style={styles.summary}>
               <View style={styles.summaryItem}>
                 <Text style={styles.summaryLabel}>Debits</Text>
                 <Text style={[styles.summaryValue, { color: "#dc2626" }]}>
-                  {money(summary.total_debit)}
+                  {money(totalDebit)}
                 </Text>
               </View>
               <View style={styles.summaryDivider} />
               <View style={styles.summaryItem}>
                 <Text style={styles.summaryLabel}>Credits</Text>
                 <Text style={[styles.summaryValue, { color: "#16a34a" }]}>
-                  {money(summary.total_credit)}
+                  {money(totalCredit)}
                 </Text>
               </View>
               <View style={styles.summaryDivider} />
@@ -221,6 +253,34 @@ const styles = StyleSheet.create({
 
   empty: { alignItems: "center", paddingVertical: 40, gap: 10 },
   emptyText: { color: "#94a3b8", fontSize: 14, fontWeight: "600" },
+
+  depositCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    marginTop: 16,
+    borderWidth: 1,
+    borderColor: "#dbeafe",
+    shadowColor: "#0f172a",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  depositIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 13,
+    backgroundColor: "#e0f2fe",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  depositLabel: { fontSize: 12.5, color: "#64748b", fontWeight: "700" },
+  depositValue: { fontSize: 18, fontWeight: "800", color: "#0f172a", marginTop: 2 },
 
   summary: {
     flexDirection: "row",
