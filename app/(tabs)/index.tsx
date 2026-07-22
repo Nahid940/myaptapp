@@ -1,5 +1,6 @@
 import {
   ActivityIndicator,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -12,8 +13,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import { api } from "../../lib/api";
+import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 import NotificationsPopup from "@/components/ui/NotificationsPopup";
+import OwnerDashboard from "@/components/ui/OwnerDashboard";
 
 import React, { useEffect, useState } from "react";
 import ImageSlider from "@/components/ui/homeSlider";
@@ -77,19 +80,37 @@ const activityMeta = (key: string) => {
 export default function HomeScreen() {
   const router = useRouter();
   const { colors } = useTheme();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any>(null);
   const [activities, setActivities] = useState<any[]>([]);
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifCount, setNotifCount] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const loadHome = async () => {
+    // Prefer the endpoint that matches the known role, but fall back to the
+    // other one if it isn't available — so the screen never ends up blank.
+    const primary = user?.is_owner ? `/owner/home` : `/home`;
+    const fallback = user?.is_owner ? `/home` : `/owner/home`;
+    try {
+      const res = await api.get(primary);
+      return res?.data ?? null;
+    } catch {
+      try {
+        const res = await api.get(fallback);
+        return res?.data ?? null;
+      } catch {
+        return null;
+      }
+    }
+  };
 
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
-      const response = await api.get(`/home`);
-      setData(response.data);
-    } catch (err) {
-      // console.error("Error fetching dashboard:", err);
+      const home = await loadHome();
+      if (home) setData(home);
     } finally {
       setLoading(false);
     }
@@ -113,11 +134,27 @@ export default function HomeScreen() {
     }
   };
 
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      const [home] = await Promise.all([
+        loadHome(),
+        fetchActivities(),
+        fetchNotifCount(),
+      ]);
+      if (home) setData(home);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   useEffect(() => {
     fetchDashboardData();
     fetchActivities();
     fetchNotifCount();
-  }, []);
+    // Re-fetch with the correct endpoint once we know if the user is an owner.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.is_owner]);
 
   if (!data) {
     return (
@@ -135,12 +172,43 @@ export default function HomeScreen() {
 
   const pendingCount = Number(data?.unpaid_count ?? 0);
 
+  // Owners get their own dashboard (the /home payload shape differs entirely).
+  // Detect by data shape first (most reliable), then fall back to the flag.
+  const isOwner = Boolean(data?.owner) || Boolean(data?.is_owner) || Boolean(user?.is_owner);
+  const quickMenus = isOwner
+    ? QUICK_MENUS.filter((m) => m.title !== "Pay Rent")
+    : QUICK_MENUS;
+
+  if (isOwner || !data?.booking) {
+    return (
+      <>
+        <OwnerDashboard
+          data={data}
+          notifCount={notifCount}
+          onBellPress={() => setNotifOpen(true)}
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+        />
+        <NotificationsPopup
+          visible={notifOpen}
+          onClose={() => {
+            setNotifOpen(false);
+            fetchNotifCount();
+          }}
+        />
+      </>
+    );
+  }
+
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.bg }]} edges={["top"]}>
       <ScrollView
         style={styles.container}
         contentContainerStyle={{ paddingBottom: 32 }}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#159df8" colors={["#159df8"]} />
+        }
       >
         {/* Greeting row */}
         <View style={styles.greetingRow}>
@@ -198,17 +266,26 @@ export default function HomeScreen() {
 
             <View style={styles.headerLine} />
 
-            <Text style={styles.rentLabel}>Monthly Rent</Text>
-            <Text style={[styles.rentAmount, { color: colors.text }]}>{fmt(data.booking.rent)}</Text>
+            {!isOwner && (
+              <>
+                <Text style={styles.rentLabel}>Monthly Rent</Text>
+                <Text style={[styles.rentAmount, { color: colors.text }]}>
+                  {fmt(data.booking.rent)}
+                </Text>
+              </>
+            )}
 
             <View style={styles.leaseActiveRow}>
               <Ionicons name="checkmark-circle" size={16} color="#16a34a" />
               <Text style={styles.leaseActiveText}>Lease Active</Text>
             </View>
 
-            <View style={styles.headerLine} />
-
-            <Text style={styles.untilText}>Until {formatDate(data.booking.end_date)}</Text>
+            {!isOwner && (
+              <>
+                <View style={styles.headerLine} />
+                <Text style={styles.untilText}>Until {formatDate(data.booking.end_date)}</Text>
+              </>
+            )}
           </View>
 
           <Image
@@ -225,7 +302,7 @@ export default function HomeScreen() {
 
         {/* Quick menu card */}
         <View style={[styles.menuCard, { backgroundColor: colors.card }]}>
-          {QUICK_MENUS.map((m, i) => (
+          {quickMenus.map((m, i) => (
             <React.Fragment key={m.title}>
               <Pressable
                 style={({ pressed }) => [styles.menuItem, pressed && { opacity: 0.6 }]}
@@ -236,7 +313,7 @@ export default function HomeScreen() {
                 </View>
                 <Text style={[styles.menuLabel, { color: colors.text }]}>{m.title}</Text>
               </Pressable>
-              {i < QUICK_MENUS.length - 1 && <View style={styles.menuDivider} />}
+              {i < quickMenus.length - 1 && <View style={styles.menuDivider} />}
             </React.Fragment>
           ))}
         </View>

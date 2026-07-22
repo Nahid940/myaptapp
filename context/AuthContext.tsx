@@ -7,6 +7,7 @@ interface User {
   id?: number;
   name?: string;
   email?: string;
+  is_owner?: boolean;
   token: string;
 }
 
@@ -14,7 +15,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   authToken : string;
-  login: (token: string) => Promise<void>;
+  login: (token: string, isOwner?: boolean) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -32,7 +33,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       try {
         const res = await api.get("/me");
-        setUser({ ...res, token });
+        const storedOwner = await SecureStore.getItemAsync("is_owner");
+        setUser({ ...res, token, is_owner: res?.is_owner ?? storedOwner === "1" });
         setAuthToken(token);
         syncPushToken();
       } catch (err) {
@@ -45,11 +47,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     loadUser();
   }, []);
 
-  const login = async (token: string) => {
+  const login = async (token: string, isOwner?: boolean) => {
     try {
       await SecureStore.setItemAsync("token", token);
+      if (isOwner !== undefined) {
+        await SecureStore.setItemAsync("is_owner", isOwner ? "1" : "0");
+      }
       const res = await api.get("/me");
-      setUser({ ...res, token });
+      const storedOwner = await SecureStore.getItemAsync("is_owner");
+      setUser({ ...res, token, is_owner: res?.is_owner ?? isOwner ?? storedOwner === "1" });
       setAuthToken(token);
       syncPushToken();
     } catch (err) {
@@ -62,6 +68,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const logout = async () => {
     await SecureStore.deleteItemAsync("token");
+    await SecureStore.deleteItemAsync("is_owner");
     setUser(null);
   };
 

@@ -11,7 +11,11 @@
     "ios": {
       "bundleIdentifier": "ke.co.alamana.property",
       "supportsTablet": true,
-      "googleServicesFile": "./GoogleService-Info.plist"
+      "googleServicesFile": "./GoogleService-Info.plist",
+      "buildNumber": "1",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "ke.co.alamana.property",

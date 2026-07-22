@@ -40,6 +40,7 @@ export default function AccountScreen() {
   const { logout } = useAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
   const [info, setInfo] = useState<any>();
 
   const getTenantInfo = async () => {
@@ -66,6 +67,46 @@ export default function AccountScreen() {
         },
       },
     ]);
+  };
+
+  const performDelete = async () => {
+    setDeleting(true);
+    try {
+      await api.delete("/account");
+      await logout();
+      router.replace("/login");
+      Alert.alert("Account Deleted", "Your account has been permanently deleted.");
+    } catch (err: any) {
+      Alert.alert(
+        "Could not delete account",
+        err?.message || "Something went wrong. Please try again later."
+      );
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      "Delete Account",
+      "This will permanently delete your account and all associated data. This action cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () =>
+            Alert.alert(
+              "Are you absolutely sure?",
+              "Your account and data will be permanently removed.",
+              [
+                { text: "Cancel", style: "cancel" },
+                { text: "Delete Permanently", style: "destructive", onPress: performDelete },
+              ]
+            ),
+        },
+      ]
+    );
   };
 
   useEffect(() => {
@@ -153,6 +194,26 @@ export default function AccountScreen() {
           <Text style={[styles.actionText, { color: "#dc2626" }]}>Logout</Text>
           <Ionicons name="chevron-forward" size={20} color="#fca5a5" />
         </Pressable>
+
+        <Pressable
+          onPress={handleDeleteAccount}
+          disabled={deleting}
+          style={({ pressed }) => [styles.deleteBtn, pressed && styles.pressed]}
+        >
+          <View style={[styles.actionIcon, { backgroundColor: "#fee2e2" }]}>
+            <Ionicons name="trash-outline" size={20} color="#dc2626" />
+          </View>
+          <Text style={[styles.actionText, { color: "#dc2626" }]}>Delete Account</Text>
+          {deleting ? (
+            <ActivityIndicator size="small" color="#dc2626" />
+          ) : (
+            <Ionicons name="chevron-forward" size={20} color="#fca5a5" />
+          )}
+        </Pressable>
+
+        <Text style={styles.deleteHint}>
+          Deleting your account permanently removes your profile and all associated data.
+        </Text>
       </ScrollView>
     </View>
   );
@@ -311,5 +372,24 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
     color: "#0f172a",
+  },
+  deleteBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    borderRadius: 18,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    marginBottom: 10,
+    borderWidth: 1.5,
+    borderColor: "#fecaca",
+  },
+  deleteHint: {
+    fontSize: 12,
+    color: "#94a3b8",
+    fontWeight: "500",
+    textAlign: "center",
+    paddingHorizontal: 12,
+    lineHeight: 17,
   },
 });

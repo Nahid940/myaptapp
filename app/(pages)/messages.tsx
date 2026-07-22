@@ -21,6 +21,7 @@ export default function ChatScreen() {
   const [newMessage, setNewMessage] = useState("");
   const router = useRouter();
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const { colors } = useTheme();
 
   const fetchMessages = async () => {
@@ -32,6 +33,18 @@ export default function ChatScreen() {
       // console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const refreshMessages = async () => {
+    setRefreshing(true);
+    try {
+      const res = await api.get("/messages");
+      setMessages(res.data);
+    } catch (err) {
+      // console.error(err);
+    } finally {
+      setRefreshing(false);
     }
   };
 
@@ -125,6 +138,17 @@ export default function ChatScreen() {
             onSubmitEditing={sendMessage}
           />
           <Pressable
+            onPress={refreshMessages}
+            disabled={refreshing}
+            style={({ pressed }) => [styles.refreshBtn, pressed && { opacity: 0.8 }]}
+          >
+            {refreshing ? (
+              <ActivityIndicator size="small" color="#159df8" />
+            ) : (
+              <Ionicons name="refresh" size={20} color="#159df8" />
+            )}
+          </Pressable>
+          <Pressable
             onPress={sendMessage}
             style={({ pressed }) => [styles.sendBtn, pressed && { opacity: 0.8 }]}
           >
@@ -183,6 +207,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     height: 46,
     fontSize: 15,
+  },
+  refreshBtn: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: "#e0f2fe",
+    alignItems: "center",
+    justifyContent: "center",
   },
   sendBtn: {
     width: 46,

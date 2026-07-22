@@ -5,6 +5,8 @@ import { useRouter } from "expo-router";
 import { useTheme } from "@/context/ThemeContext";
 
 const APP_VERSION = "1.1";
+// Must point to your publicly hosted privacy policy page.
+const PRIVACY_POLICY_URL = "https://property.al-amana.co.ke/privacy-policy";
 
 export default function AboutScreen() {
   const router = useRouter();
@@ -80,6 +82,20 @@ export default function AboutScreen() {
               <Text style={[styles.rowLabel, { color: colors.muted }]}>Helpline</Text>
               <Text style={[styles.rowValue, { color: colors.text }]}>+254743666555</Text>
             </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.row}
+            onPress={() => Linking.openURL(PRIVACY_POLICY_URL)}
+          >
+            <View style={[styles.rowIcon, { backgroundColor: "#ede9fe" }]}>
+              <Ionicons name="shield-checkmark" size={18} color="#7c3aed" />
+            </View>
+            <View style={styles.rowText}>
+              <Text style={[styles.rowLabel, { color: colors.muted }]}>Privacy Policy</Text>
+              <Text style={[styles.rowValue, { color: colors.text }]}>View our privacy policy</Text>
+            </View>
+            <Ionicons name="open-outline" size={18} color={colors.muted} />
           </TouchableOpacity>
 
           <View style={styles.row}>

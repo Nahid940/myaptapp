@@ -11,9 +11,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { api } from "../../lib/api";
+import { useAuth } from "@/context/AuthContext";
 
 export default function LedgerScreen() {
   const router = useRouter();
+  const { user } = useAuth();
+  const isOwner = Boolean(user?.is_owner);
   const [loading, setLoading] = useState(true);
   const [currency, setCurrency] = useState("");
   const [summary, setSummary] = useState<any>(null);
@@ -22,7 +25,7 @@ export default function LedgerScreen() {
   const fetchLedger = async () => {
     setLoading(true);
     try {
-      const res = await api.get(`/ledger`);
+      const res = await api.get(isOwner ? `/owner/ledger` : `/ledger`);
       setCurrency(res?.currency ?? "");
       setSummary(res?.summary ?? null);
       setRows(res?.ledgers ?? res?.data ?? []);
@@ -36,7 +39,8 @@ export default function LedgerScreen() {
 
   useEffect(() => {
     fetchLedger();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOwner]);
 
   const money = (v: any, withCurrency = true) =>
     v === undefined || v === null
@@ -117,7 +121,10 @@ export default function LedgerScreen() {
                       <Text style={styles.descText} numberOfLines={2}>
                         {item.description}
                       </Text>
-                      <Text style={styles.metaText}>{item.date}</Text>
+                      <Text style={styles.metaText}>
+                        {item.date}
+                        {item.apartment_code ? `  ·  ${item.apartment_code}` : ""}
+                      </Text>
                       {item.reference ? (
                         <Text style={styles.refText} numberOfLines={1}>
                           {item.reference}

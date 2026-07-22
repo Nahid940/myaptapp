@@ -13,6 +13,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { api } from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
 
 const TYPES: Record<
   string,
@@ -53,6 +54,7 @@ const statusStyle = (status?: string) => {
 };
 
 const DETAIL_ROWS: { label: string; keys: string[] }[] = [
+  { label: "Unit", keys: ["unit", "apartment_code"] },
   { label: "Billing Period", keys: ["period", "billing_period"] },
   { label: "Bill Month", keys: ["bill_month", "month"] },
   { label: "Bill Year", keys: ["bill_year", "year"] },
@@ -77,6 +79,8 @@ const pick = (obj: any, keys: string[]) => {
 
 export default function UtilityBillDetails() {
   const router = useRouter();
+  const { user } = useAuth();
+  const isOwner = Boolean(user?.is_owner);
   const params = useLocalSearchParams<{ type: string; id: string }>();
   const type = (params.type || "water").toLowerCase();
   const theme = TYPES[type] ?? TYPES.water;
@@ -88,7 +92,8 @@ export default function UtilityBillDetails() {
   const fetchBill = async () => {
     setLoading(true);
     try {
-      const response = await api.get(`/utility/${params.id}`);
+      const endpoint = isOwner ? `/owner/utility/${params.id}` : `/utility/${params.id}`;
+      const response = await api.get(endpoint);
       const data = response?.reading ?? response?.data ?? response;
       setCurrency(data?.currency ?? response?.currency ?? "");
       setBill(data);

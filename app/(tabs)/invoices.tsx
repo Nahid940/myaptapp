@@ -17,6 +17,7 @@ import * as SecureStore from "expo-secure-store";
 import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 import { api } from "../../lib/api";
+import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 
 const MONTHS = [
@@ -56,6 +57,8 @@ const statusStyle = (status?: string) => {
 export default function InvoicesScreen() {
   const router = useRouter();
   const { colors } = useTheme();
+  const { user } = useAuth();
+  const isOwner = Boolean(user?.is_owner);
   const now = new Date();
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [year, setYear] = useState(now.getFullYear());
@@ -117,10 +120,13 @@ export default function InvoicesScreen() {
   const fetchInvoices = async (m: number, y: number) => {
     setLoading(true);
     try {
-      const res = await api.get(`/invoices?month=${m}&year=${y}`);
+      const endpoint = isOwner
+        ? `/owner/invoices?month=${m}&year=${y}`
+        : `/invoices?month=${m}&year=${y}`;
+      const res = await api.get(endpoint);
       const d = res?.data ?? {};
       setData(d);
-      setCurrency(d?.currency ?? res?.currency ?? "");
+      setCurrency(d?.currency ?? res?.currency ?? (isOwner ? "KES" : ""));
     } catch (err) {
       setData(null);
     } finally {
@@ -130,7 +136,8 @@ export default function InvoicesScreen() {
 
   useEffect(() => {
     fetchInvoices(month, year);
-  }, [month, year]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [month, year, isOwner]);
 
   const changeMonth = (delta: number) => {
     let m = month + delta;
@@ -150,6 +157,10 @@ export default function InvoicesScreen() {
     data?.charges?.length > 0 ? data.charges : data?.invoice ? [data.invoice] : [];
 
   const hasAmount = !loading && Number(data?.month_subtotal) > 0;
+
+  // Owner-specific data (from /owner/invoices)
+  const ownerSummary = data?.summary ?? {};
+  const ownerInvoices: any[] = data?.invoices ?? [];
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.bg }]} edges={["top"]}>
@@ -184,6 +195,89 @@ export default function InvoicesScreen() {
         contentContainerStyle={{ paddingHorizontal: 18, paddingBottom: 30 }}
         showsVerticalScrollIndicator={false}
       >
+        {isOwner ? (
+          <>
+            {/* Owner summary hero */}
+            <LinearGradient
+              colors={["#159df8", "#0b7dd0", "#0a64b8"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.hero}
+            >
+              <View style={styles.heroCircle} />
+              <Text style={styles.heroLabel}>Total Payable · {label}</Text>
+              <Text style={styles.heroBalance}>
+                {loading ? "…" : money(ownerSummary?.total_payable)}
+              </Text>
+              <View style={styles.heroRow}>
+                <View>
+                  <Text style={styles.heroSmall}>Invoices</Text>
+                  <Text style={styles.heroValue}>{ownerSummary?.total_invoices ?? 0}</Text>
+                </View>
+                <View style={styles.heroVLine} />
+                <View>
+                  <Text style={styles.heroSmall}>Service Charge</Text>
+                  <Text style={styles.heroValue}>{money(ownerSummary?.total_service_charge)}</Text>
+                </View>
+                <View style={styles.heroVLine} />
+                <View>
+                  <Text style={styles.heroSmall}>Mgmt Fee</Text>
+                  <Text style={styles.heroValue}>{money(ownerSummary?.total_management_fee)}</Text>
+                </View>
+              </View>
+            </LinearGradient>
+
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Invoices</Text>
+
+            {loading ? (
+              <ActivityIndicator size="large" color="#159df8" style={{ marginTop: 30 }} />
+            ) : ownerInvoices.length === 0 ? (
+              <View style={styles.empty}>
+                <Ionicons name="file-tray-outline" size={48} color="#cbd5e1" />
+                <Text style={styles.emptyText}>No invoices for {label}</Text>
+              </View>
+            ) : (
+              ownerInvoices.map((item: any, index: number) => {
+                const ss = statusStyle(item.status);
+                return (
+                  <View
+                    key={item.id ?? index}
+                    style={[styles.card, { backgroundColor: colors.card }]}
+                  >
+                    <View style={[styles.cardIcon, { backgroundColor: "#dbeafe" }]}>
+                      <Ionicons name="business" size={22} color="#2563eb" />
+                    </View>
+
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.cardTitle, { color: colors.text }]}>
+                        {item.apartment_code ?? "Unit"}
+                      </Text>
+                      <View style={styles.metaRow}>
+                        <Ionicons name="calendar-outline" size={12} color="#94a3b8" />
+                        <Text style={styles.metaText}>{item.period ?? label}</Text>
+                      </View>
+                      <Text style={styles.invoiceId} numberOfLines={1}>
+                        SC {money(item.service_charge)} · Mgmt {money(item.management_fee)}
+                      </Text>
+                    </View>
+
+                    <View style={{ alignItems: "flex-end" }}>
+                      <Text style={[styles.cardAmount, { color: colors.text }]}>
+                        {money(item.total_payable)}
+                      </Text>
+                      <View style={[styles.badge, { backgroundColor: ss.bg }]}>
+                        <Text style={[styles.badgeText, { color: ss.color }]}>
+                          {String(item.status || "—").toUpperCase()}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                );
+              })
+            )}
+          </>
+        ) : (
+          <>
         {/* Month summary hero */}
         <LinearGradient
           colors={["#159df8", "#0b7dd0", "#0a64b8"]}
@@ -311,6 +405,8 @@ export default function InvoicesScreen() {
               </Text>
             </View>
           </View>
+        )}
+          </>
         )}
       </ScrollView>
     </SafeAreaView>

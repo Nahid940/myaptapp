@@ -39,8 +39,8 @@ export default function HomePageIcons() {
           onPress={() => router.push(item.route as any)}
           style={({ pressed }) => [styles.item, pressed && styles.itemPressed]}
         >
-          <View style={[styles.iconContainer, { backgroundColor: item.bg }]}>
-            <Ionicons name={item.icon} size={26} color={item.color} />
+          <View style={[styles.iconContainer, { backgroundColor: item.color }]}>
+            <Ionicons name={item.icon} size={26} color="#fff" />
             {(item.count ?? 0) > 0 && (
               <View style={styles.badge}>
                 <Text style={styles.badgeText}>{item.count}</Text>
@@ -77,6 +77,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 8,
+    shadowColor: "#0f172a",
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 5,
   },
   title: {
     fontSize: 12.5,

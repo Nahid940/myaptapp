@@ -12,6 +12,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { api } from "../../lib/api";
+import { useAuth } from "@/context/AuthContext";
 
 type UtilityType = "water" | "electricity";
 
@@ -43,6 +44,8 @@ const TYPES: Record<
 
 export default function UtilitiesList() {
   const router = useRouter();
+  const { user } = useAuth();
+  const isOwner = Boolean(user?.is_owner);
   const [type, setType] = useState<UtilityType>("water");
   const [loading, setLoading] = useState(true);
   const [currency, setCurrency] = useState("");
@@ -58,7 +61,10 @@ export default function UtilitiesList() {
   const fetchBills = async (utilityType: UtilityType) => {
     setLoading(true);
     try {
-      const res = await api.get(`/utilities/${utilityType}`);
+      const endpoint = isOwner
+        ? `/owner/utilities/${utilityType}`
+        : `/utilities/${utilityType}`;
+      const res = await api.get(endpoint);
       const list = res?.readings ?? res?.data ?? [];
 
       setCurrency(res?.currency ?? "");
@@ -76,7 +82,8 @@ export default function UtilitiesList() {
 
   useEffect(() => {
     fetchBills(type);
-  }, [type]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [type, isOwner]);
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
@@ -158,7 +165,15 @@ export default function UtilitiesList() {
                 </View>
 
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.cardPeriod}>{item.period ?? `Bill #${item.id}`}</Text>
+                  <View style={styles.periodRow}>
+                    <Text style={styles.cardPeriod}>{item.period ?? `Bill #${item.id}`}</Text>
+                    {isOwner && item.unit ? (
+                      <View style={[styles.unitBadge, { backgroundColor: theme.bg }]}>
+                        <Ionicons name="home" size={11} color={theme.accent} />
+                        <Text style={[styles.unitBadgeText, { color: theme.accent }]}>{item.unit}</Text>
+                      </View>
+                    ) : null}
+                  </View>
                   {item.consumption !== undefined && (
                     <View style={styles.consumptionRow}>
                       <Ionicons name="speedometer-outline" size={13} color="#64748b" />
@@ -309,7 +324,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  periodRow: { flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" },
   cardPeriod: { fontSize: 15.5, fontWeight: "700", color: "#0f172a" },
+  unitBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 20,
+  },
+  unitBadgeText: { fontSize: 11, fontWeight: "800" },
   consumptionRow: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 3 },
   cardSub: { fontSize: 13, color: "#64748b" },
   cardDate: { fontSize: 11.5, color: "#94a3b8", marginTop: 3, fontWeight: "600" },
