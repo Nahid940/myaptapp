@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -47,6 +48,7 @@ export default function VisitorListScreen() {
   const [page, setPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const fetchVisits = async (pageNumber = 1) => {
     setLoading(true);
@@ -66,6 +68,31 @@ export default function VisitorListScreen() {
   useEffect(() => {
     fetchVisits(1);
   }, []);
+
+  const confirmDelete = (g: any) => {
+    Alert.alert(
+      "Delete Guest",
+      `Remove ${g.first_name ?? "this guest"}'s visit record? This cannot be undone.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            setDeletingId(g.id);
+            try {
+              await api.delete(`/visits/${g.id}`);
+              setData((prev) => prev.filter((v) => v.id !== g.id));
+            } catch (err: any) {
+              Alert.alert("Error", err?.message || "Could not delete. Please try again.");
+            } finally {
+              setDeletingId(null);
+            }
+          },
+        },
+      ]
+    );
+  };
 
   const Row = ({ icon, label, value }: { icon: IconName; label: string; value?: string }) =>
     value ? (
@@ -90,7 +117,13 @@ export default function VisitorListScreen() {
           <Ionicons name="arrow-back" size={22} color={colors.text} />
         </Pressable>
         <Text style={[styles.navTitle, { color: colors.text }]}>Guest List</Text>
-        <View style={{ width: 38 }} />
+        <Pressable
+          hitSlop={10}
+          onPress={() => router.push("/(tabs)/guestRegister" as any)}
+          style={[styles.backBtn, { backgroundColor: "#159df8" }]}
+        >
+          <Ionicons name="add" size={24} color="#fff" />
+        </Pressable>
       </View>
 
       {loading ? (
@@ -104,6 +137,13 @@ export default function VisitorListScreen() {
             <View style={styles.empty}>
               <Ionicons name="people-outline" size={48} color="#cbd5e1" />
               <Text style={styles.emptyText}>No guests registered yet</Text>
+              <TouchableOpacity
+                style={styles.emptyAddBtn}
+                onPress={() => router.push("/(tabs)/guestRegister" as any)}
+              >
+                <Ionicons name="add" size={18} color="#fff" />
+                <Text style={styles.emptyAddText}>Register a Guest</Text>
+              </TouchableOpacity>
             </View>
           ) : (
             data.map((g) => {
@@ -128,6 +168,41 @@ export default function VisitorListScreen() {
                         <Text style={styles.passText}>{g.pass}</Text>
                       </View>
                     ) : null}
+                    <Pressable
+                      hitSlop={8}
+                      onPress={() =>
+                        router.push({
+                          pathname: "/(tabs)/guestRegister",
+                          params: {
+                            id: String(g.id),
+                            first_name: g.first_name ?? "",
+                            phone: g.phone ?? "",
+                            id_passport_no: g.id_passport_no ?? "",
+                            remarks: g.remarks ?? "",
+                            visit_type: g.visit_type ?? "",
+                            access_method: g.access_method ?? "",
+                            valid_from: g.valid_from ?? "",
+                            valid_to: g.valid_to ?? "",
+                            apartment_id: g.apartment_id != null ? String(g.apartment_id) : "",
+                          },
+                        } as any)
+                      }
+                      style={[styles.editBtn, { backgroundColor: colors.inputBg }]}
+                    >
+                      <Ionicons name="create-outline" size={18} color="#159df8" />
+                    </Pressable>
+                    <Pressable
+                      hitSlop={8}
+                      disabled={deletingId === g.id}
+                      onPress={() => confirmDelete(g)}
+                      style={[styles.editBtn, { backgroundColor: "#fee2e2" }]}
+                    >
+                      {deletingId === g.id ? (
+                        <ActivityIndicator size="small" color="#dc2626" />
+                      ) : (
+                        <Ionicons name="trash-outline" size={18} color="#dc2626" />
+                      )}
+                    </Pressable>
                   </View>
 
                   <View style={[styles.divider, { backgroundColor: colors.border }]} />
@@ -244,6 +319,13 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   passText: { color: "#159df8", fontSize: 11.5, fontWeight: "800" },
+  editBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 11,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   divider: { height: 1, marginVertical: 12 },
 
   detailRow: { flexDirection: "row", alignItems: "center", gap: 7, paddingVertical: 4 },
@@ -271,6 +353,17 @@ const styles = StyleSheet.create({
 
   empty: { alignItems: "center", paddingVertical: 60, gap: 12 },
   emptyText: { color: "#94a3b8", fontSize: 15, fontWeight: "600" },
+  emptyAddBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#159df8",
+    paddingHorizontal: 18,
+    paddingVertical: 11,
+    borderRadius: 14,
+    marginTop: 6,
+  },
+  emptyAddText: { color: "#fff", fontSize: 14.5, fontWeight: "800" },
 
   pagination: {
     flexDirection: "row",

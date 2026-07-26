@@ -43,13 +43,21 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
-      const response = await api.post<{ token?: string; message?: string; is_owner?: boolean }>("/login", {
+      const response = await api.post<{
+        token?: string;
+        message?: string;
+        is_owner?: boolean;
+        has_active_lease?: boolean;
+      }>("/login", {
         username,
         password,
       });
 
       if (response?.token) {
-        await login(response.token, response.is_owner);
+        await login(response.token, {
+          is_owner: response.is_owner,
+          has_active_lease: response.has_active_lease,
+        });
         router.replace("/(tabs)");
       } else {
         setErrors({ general: "Login Failed, Invalid credentials" });

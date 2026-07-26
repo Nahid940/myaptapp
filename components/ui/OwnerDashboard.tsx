@@ -1,9 +1,33 @@
+import { useAuth } from "@/context/AuthContext";
+import { useTheme } from "@/context/ThemeContext";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import { Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import { useTheme } from "@/context/ThemeContext";
+import OccupancyDonut from "./OccupancyDonut";
+
+function LegendRow({
+  color,
+  label,
+  value,
+  textColor,
+}: {
+  color: string;
+  label: string;
+  value: number | string;
+  textColor: string;
+}) {
+  return (
+    <View style={styles.legendRow}>
+      <View style={[styles.legendDot, { backgroundColor: color }]} />
+      <Text style={styles.legendLabel} numberOfLines={1}>
+        {label}
+      </Text>
+      <Text style={[styles.legendValue, { color: textColor }]}>{value}</Text>
+    </View>
+  );
+}
 
 const DEFAULT_BUILDING_IMAGE = require("../../assets/images/header_image.jpg");
 
@@ -67,16 +91,30 @@ export default function OwnerDashboard({
 }: Props) {
   const router = useRouter();
   const { colors } = useTheme();
+  const { user } = useAuth();
   const [imgError, setImgError] = useState(false);
+
+  // Active lease flag can come from login (persisted on user) or the home payload.
+  const hasActiveLease = Boolean(user?.has_active_lease ?? data?.has_active_lease);
 
   const owner = data?.owner ?? {};
   const building = data?.building ?? {};
   const units = data?.units ?? {};
   const occupancy = data?.owner_occupancy ?? {};
   const payments = data?.payments ?? {};
+  const receivables = data ?.receivables ?? {};
   const maintenance = data?.maintenance ?? {};
   const serviceRequests: any[] = data?.service_requests ?? [];
   const activity: any[] = data?.recent_activity ?? [];
+
+
+  // 'receivables' => [
+  //     'total_receivable' => round($totalReceivable, 2),
+  //     'total_received'   => round($totalReceived, 2),
+  //     'due'              => $totalReceivableDue,
+  //     'pending_count'    => $ownerPayouts->whereIn('status', ['due', 'partial'])->count(),
+  // ],
+
 
   const currency = data?.currency ?? "KES";
   const fmt = (v: any) =>
@@ -98,6 +136,16 @@ export default function OwnerDashboard({
   const unitList: any[] = units?.list ?? [];
   const occupiedUnits: any[] = occupancy?.units ?? [];
 
+  // Occupancy % for the chart: prefer `occupancy_rate`, then parse
+  // `occupancy_label` ("80% occupied"), then compute from counts.
+  const occupancyRate = (() => {
+    if (units?.occupancy_rate != null) return Number(units.occupancy_rate) || 0;
+    const parsed = parseFloat(String(units?.occupancy_label ?? ""));
+    if (!isNaN(parsed)) return parsed;
+    const total = Number(units?.total ?? 0);
+    return total > 0 ? (Number(units?.occupied ?? 0) / total) * 100 : 0;
+  })();
+
   // The owner's apartment code (their occupied unit first, else the first unit).
   const apartmentCode =
     occupiedUnits?.[0]?.apartment_code ?? unitList?.[0]?.apartment_code ?? null;
@@ -115,7 +163,7 @@ export default function OwnerDashboard({
   const dueDateObj = new Date();
   const nextDue = new Date(dueDateObj.getFullYear(), dueDateObj.getMonth() + 1, 5);
   const dueDate = `${nextDue.getDate()} ${MONTH_ABBR[nextDue.getMonth()]} ${nextDue.getFullYear()}`;
-
+  let ttlServiceCharge = 0;
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.bg }]} edges={["top"]}>
       <ScrollView
@@ -207,6 +255,7 @@ export default function OwnerDashboard({
             ) : null}
 
             {serviceChargeUnits.length > 0 ? (
+              ttlServiceCharge = serviceChargeUnits.reduce((sum, u) => sum + (u.service_charge || 0), 0),
               <>
                 <View style={styles.headerLine} />
                 <Text style={styles.scHeading}>Monthly Service Charge</Text>
@@ -218,11 +267,14 @@ export default function OwnerDashboard({
                     </Text>
                     <Text style={styles.scLineAmt}>{fmt(u.service_charge)}</Text>
                   </View>
+                  
                 ))}
-                <View style={styles.dueRow}>
-                  <Ionicons name="calendar" size={13} color="#dc2626" />
-                  <Text style={styles.dueText}>Next Due Date {dueDate}</Text>
-                </View>
+                {ttlServiceCharge > 0 && (
+                  <View style={styles.dueRow}>
+                    <Ionicons name="calendar" size={13} color="#dc2626" />
+                    <Text style={styles.dueText}>Next Due Date {dueDate}</Text>
+                  </View>
+                )}
               </>
             ) : null}
           </View>
@@ -266,6 +318,25 @@ export default function OwnerDashboard({
               color: "#16a34a",
               route: "/notices",
             },
+            // Only show Incomes & Tenants when the owner has an active lease.
+            ...(hasActiveLease
+              ? [
+                  {
+                    title: "Incomes",
+                    subtitle: "Payouts and earnings",
+                    icon: "cash" as const,
+                    color: "#0d9488",
+                    route: "/incomes",
+                  },
+                  {
+                    title: "Tenants",
+                    subtitle: "Your tenants info",
+                    icon: "people" as const,
+                    color: "#7c3aed",
+                    route: "/tenants",
+                  },
+                ]
+              : []),
           ].map((q) => (
             <Pressable
               key={q.title}
@@ -273,7 +344,7 @@ export default function OwnerDashboard({
               style={({ pressed }) => [styles.quickTile, pressed && { opacity: 0.65 }]}
             >
               <View style={[styles.quickIcon, { backgroundColor: q.color }]}>
-                <Ionicons name={q.icon} size={26} color="#fff" />
+                <Ionicons name={q.icon} size={25} color="#fff" />
               </View>
               <Text style={[styles.quickTitle, { color: colors.text }]} numberOfLines={1}>
                 {q.title}
@@ -283,6 +354,82 @@ export default function OwnerDashboard({
               </Text>
             </Pressable>
           ))}
+        </View>
+
+        {/* Units list */}
+        <View style={[styles.card, { backgroundColor: colors.card }]}>
+          <Text style={[styles.cardTitle, { color: colors.text, marginBottom: 12 }]}>My Units</Text>
+
+          {/* Occupancy chart */}
+          {(units?.total ?? 0) > 0 ? (
+            <View style={styles.occChartRow}>
+              <OccupancyDonut
+                percent={occupancyRate}
+                textColor={colors.text}
+                subColor={colors.muted}
+                trackColor={colors.border}
+              />
+              <View style={styles.occLegend}>
+                <LegendRow color="#16a34a" label="Occupied" value={units?.occupied ?? 0} textColor={colors.text} />
+                <LegendRow color="#2563eb" label="Owner Occupied" value={units?.owner_occupied ?? 0} textColor={colors.text} />
+                <LegendRow color="#d97706" label="Vacant" value={units?.vacant ?? 0} textColor={colors.text} />
+                <LegendRow color="#64748b" label="Total Units" value={units?.total ?? 0} textColor={colors.text} />
+              </View>
+            </View>
+          ) : null}
+
+          {unitList.length === 0 ? (
+            <View style={styles.empty}>
+              <Ionicons name="home-outline" size={34} color="#cbd5e1" />
+              <Text style={styles.emptyText}>No units found</Text>
+            </View>
+          ) : (
+            unitList.map((u: any, i: number) => {
+              const ss = statusStyle(u.rental_status);
+              return (
+                <View
+                  key={u.id ?? i}
+                  style={[
+                    styles.unitRow,
+                    { borderBottomColor: colors.border },
+                    i === unitList.length - 1 && { borderBottomWidth: 0, paddingBottom: 0 },
+                  ]}
+                >
+                  <View style={[styles.unitIcon, { backgroundColor: ss.bg }]}>
+                    <Ionicons name="business" size={18} color={ss.color} />
+                  </View>
+
+                  <View style={{ flex: 1 }}>
+                    <View style={styles.unitTitleRow}>
+                      <Text style={[styles.unitCode, { color: colors.text }]} numberOfLines={1}>
+                        {u.apartment_code}
+                      </Text>
+                      {u.self_occupied ? (
+                        <View style={[styles.badge, { backgroundColor: "#dbeafe" }]}>
+                          <Text style={[styles.badgeText, { color: "#2563eb" }]}>Self Occupied</Text>
+                        </View>
+                      ) : (
+                        <View style={[styles.badge, { backgroundColor: ss.bg }]}>
+                          <Text style={[styles.badgeText, { color: ss.color }]}>{ss.label}</Text>
+                        </View>
+                      )}
+                    </View>
+                    <Text style={styles.unitMeta}>
+                      Rent {fmt(u.basic_rent)} · SC {fmt(u.service_charge)}
+                    </Text>
+
+                    <Pressable
+                      onPress={() => router.push(`/unit/${u.id}` as any)}
+                      style={({ pressed }) => [styles.viewBtn, pressed && { opacity: 0.6 }]}
+                    >
+                      <Text style={styles.viewBtnText}>View Details</Text>
+                      <Ionicons name="chevron-forward" size={14} color="#159df8" />
+                    </Pressable>
+                  </View>
+                </View>
+              );
+            })
+          )}
         </View>
 
         {/* Payments */}
@@ -317,6 +464,44 @@ export default function OwnerDashboard({
               <Text style={styles.tripleLabel}>Due</Text>
               <Text style={[styles.tripleValue, { color: "#dc2626" }]}>
                 {fmt(payments?.total_due)}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+
+        {/* Receivables */}
+        <View style={[styles.card, { backgroundColor: colors.card }]}>
+          <View style={styles.cardHeader}>
+            <Text style={[styles.cardTitle, { color: colors.text }]}>Receivables</Text>
+            {Number(receivables?.pending_count ?? 0) > 0 && (
+              <View style={styles.pendingPill}>
+                <Text style={styles.pendingPillText}>
+                  {receivables.pending_count} pending
+                </Text>
+              </View>
+            )}
+          </View>
+
+          <View style={styles.tripleRow}>
+            <View style={styles.tripleCol}>
+              <Text style={styles.tripleLabel}>Receivable</Text>
+              <Text style={[styles.tripleValue, { color: colors.text }]}>
+                {fmt(receivables?.total_receivable)}
+              </Text>
+            </View>
+            <View style={styles.vLine} />
+            <View style={styles.tripleCol}>
+              <Text style={styles.tripleLabel}>Received</Text>
+              <Text style={[styles.tripleValue, { color: "#16a34a" }]}>
+                {fmt(receivables?.total_received)}
+              </Text>
+            </View>
+            <View style={styles.vLine} />
+            <View style={styles.tripleCol}>
+              <Text style={styles.tripleLabel}>Due</Text>
+              <Text style={[styles.tripleValue, { color: "#dc2626" }]}>
+                {fmt(receivables?.total_due)}
               </Text>
             </View>
           </View>
@@ -470,50 +655,6 @@ export default function OwnerDashboard({
             ))}
           </View>
         )}
-
-        {/* Units list */}
-        <View style={[styles.card, { backgroundColor: colors.card }]}>
-          <Text style={[styles.cardTitle, { color: colors.text, marginBottom: 12 }]}>My Units</Text>
-
-          {unitList.length === 0 ? (
-            <View style={styles.empty}>
-              <Ionicons name="home-outline" size={34} color="#cbd5e1" />
-              <Text style={styles.emptyText}>No units found</Text>
-            </View>
-          ) : (
-            unitList.map((u: any, i: number) => {
-              const ss = statusStyle(u.rental_status);
-              return (
-                <View
-                  key={u.id ?? i}
-                  style={[
-                    styles.unitRow,
-                    { borderBottomColor: colors.border },
-                    i === unitList.length - 1 && { borderBottomWidth: 0, paddingBottom: 0 },
-                  ]}
-                >
-                  <View style={[styles.unitIcon, { backgroundColor: ss.bg }]}>
-                    <Ionicons name="business" size={18} color={ss.color} />
-                  </View>
-
-                  <View style={{ flex: 1 }}>
-                    <View style={styles.unitTitleRow}>
-                      <Text style={[styles.unitCode, { color: colors.text }]} numberOfLines={1}>
-                        {u.apartment_code}
-                      </Text>
-                      <View style={[styles.badge, { backgroundColor: ss.bg }]}>
-                        <Text style={[styles.badgeText, { color: ss.color }]}>{ss.label}</Text>
-                      </View>
-                    </View>
-                    <Text style={styles.unitMeta}>
-                      Rent {fmt(u.basic_rent)} · SC {fmt(u.service_charge)}
-                    </Text>
-                  </View>
-                </View>
-              );
-            })
-          )}
-        </View>
 
         {/* Recent activity */}
         <View style={[styles.card, { backgroundColor: colors.card }]}>
@@ -696,13 +837,14 @@ const styles = StyleSheet.create({
   /* Quick actions */
   quickCard: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    flexWrap: "wrap",
+    rowGap: 20,
   },
-  quickTile: { flex: 1, alignItems: "center", paddingHorizontal: 2 },
+  quickTile: { width: "25%", alignItems: "center", paddingHorizontal: 2 },
   quickIcon: {
-    width: 54,
-    height: 54,
-    borderRadius: 17,
+    width: 52,
+    height: 52,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 8,
@@ -712,7 +854,7 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 5,
   },
-  quickTitle: { fontSize: 12.5, fontWeight: "800", textAlign: "center" },
+  quickTitle: { fontSize: 11.5, fontWeight: "800", textAlign: "center" },
   quickSub: {
     fontSize: 10,
     color: "#94a3b8",
@@ -773,6 +915,18 @@ const styles = StyleSheet.create({
   occMeta: { fontSize: 12.5, color: "#94a3b8", fontWeight: "600" },
 
   /* Units */
+  occChartRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 18,
+    paddingVertical: 6,
+    marginBottom: 8,
+  },
+  occLegend: { flex: 1, gap: 10 },
+  legendRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  legendDot: { width: 10, height: 10, borderRadius: 5 },
+  legendLabel: { flex: 1, fontSize: 13, color: "#64748b", fontWeight: "600" },
+  legendValue: { fontSize: 14.5, fontWeight: "800" },
   unitRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -790,6 +944,18 @@ const styles = StyleSheet.create({
   unitTitleRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   unitCode: { flex: 1, fontSize: 15, fontWeight: "800" },
   unitMeta: { fontSize: 12.5, color: "#94a3b8", fontWeight: "600", marginTop: 3 },
+  viewBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    gap: 3,
+    marginTop: 8,
+    backgroundColor: "#e0f2fe",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  viewBtnText: { color: "#159df8", fontSize: 12.5, fontWeight: "800" },
   badge: { paddingHorizontal: 9, paddingVertical: 3, borderRadius: 20 },
   badgeText: { fontSize: 10, fontWeight: "800" },
 

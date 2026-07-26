@@ -1,8 +1,8 @@
 import DateTimePicker, {
   DateTimePickerAndroid,
 } from "@react-native-community/datetimepicker";
-import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -43,20 +43,58 @@ export default function GuestVisitForm() {
   const router = useRouter();
   const { colors, isDark } = useTheme();
 
-  const [firstName, setFirstName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [idNo, setIdNo] = useState("");
-  const [remarks, setRemarks] = useState("");
-  const [visitType, setVisitType] = useState(VISIT_TYPES[0]);
-  const [accessMethod, setAccessMethod] = useState(ACCESS_METHODS[0]);
+  const params = useLocalSearchParams<{
+    id?: string;
+    first_name?: string;
+    phone?: string;
+    id_passport_no?: string;
+    remarks?: string;
+    visit_type?: string;
+    access_method?: string;
+    valid_from?: string;
+    valid_to?: string;
+    apartment_id?: string;
+  }>();
+  const isEdit = !!params.id;
 
-  const [validFrom, setValidFrom] = useState(new Date());
-  const [validTo, setValidTo] = useState(new Date());
+  const parseDate = (s?: string) => {
+    if (!s) return new Date();
+    const d = new Date(s);
+    return isNaN(d.getTime()) ? new Date() : d;
+  };
 
-  const [modal, setModal] = useState<null | "visit" | "access">(null);
+  const [firstName, setFirstName] = useState(params.first_name ?? "");
+  const [phone, setPhone] = useState(params.phone ?? "");
+  const [idNo, setIdNo] = useState(params.id_passport_no ?? "");
+  const [remarks, setRemarks] = useState(params.remarks ?? "");
+  const [visitType, setVisitType] = useState(params.visit_type || VISIT_TYPES[0]);
+  const [accessMethod, setAccessMethod] = useState(params.access_method || ACCESS_METHODS[0]);
+
+  const [validFrom, setValidFrom] = useState(parseDate(params.valid_from));
+  const [validTo, setValidTo] = useState(parseDate(params.valid_to));
+
+  const [apartments, setApartments] = useState<any[]>([]);
+  const [apartmentId, setApartmentId] = useState<number | null>(
+    params.apartment_id ? Number(params.apartment_id) : null
+  );
+
+  const [modal, setModal] = useState<null | "visit" | "access" | "apartment">(null);
   const [iosDate, setIosDate] = useState<null | "from" | "to">(null);
   const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState<{ first_name?: string; phone?: string }>({});
+  const [errors, setErrors] = useState<{ first_name?: string; phone?: string; apartment_id?: string }>({});
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await api.get("/guest-register/apartments");
+        setApartments(Array.isArray(res?.apartments) ? res.apartments : []);
+      } catch {
+        setApartments([]);
+      }
+    })();
+  }, []);
+
+  const selectedApartment = apartments.find((a) => a.id === apartmentId);
 
   const fmtDate = (d: Date) => {
     const y = d.getFullYear();
@@ -84,6 +122,7 @@ export default function GuestVisitForm() {
     const e: typeof errors = {};
     if (!firstName.trim()) e.first_name = "First name is required";
     if (!phone.trim()) e.phone = "Phone is required";
+    if (!apartmentId) e.apartment_id = "Please select a visiting unit";
     setErrors(e);
     if (Object.keys(e).length) return;
 
@@ -93,6 +132,7 @@ export default function GuestVisitForm() {
         first_name: firstName.trim(),
         phone: phone.trim(),
         id_passport_no: idNo.trim(),
+        apartment_id: apartmentId,
         visit_type: visitType,
         access_method: accessMethod,
         valid_from: fmtDate(validFrom),
@@ -100,23 +140,31 @@ export default function GuestVisitForm() {
         remarks: remarks.trim(),
       };
 
-      const res = await api.post("/guest-register", payload);
+      const res = isEdit
+        ? await api.put(`/visits/${params.id}`, payload)
+        : await api.post("/guest-register", payload);
 
-      if (res?.success || res?.data || res?.message) {
-        Alert.alert("Success", res?.message || "Guest registered successfully!");
-        setFirstName("");
-        setPhone("");
-        setIdNo("");
-        setRemarks("");
-        setVisitType(VISIT_TYPES[0]);
-        setAccessMethod(ACCESS_METHODS[0]);
-        setValidFrom(new Date());
-        setValidTo(new Date());
+      if (res?.status || res?.success || res?.data || res?.message) {
+        if (isEdit) {
+          Alert.alert("Success", res?.message || "Guest updated successfully!");
+          router.back();
+        } else {
+          Alert.alert("Success", res?.message || "Guest registered successfully!");
+          setFirstName("");
+          setPhone("");
+          setIdNo("");
+          setRemarks("");
+          setApartmentId(null);
+          setVisitType(VISIT_TYPES[0]);
+          setAccessMethod(ACCESS_METHODS[0]);
+          setValidFrom(new Date());
+          setValidTo(new Date());
+        }
       } else {
         Alert.alert("Error", "Something went wrong. Please try again.");
       }
-    } catch (err) {
-      Alert.alert("Error", "Network error. Please try again.");
+    } catch (err: any) {
+      Alert.alert("Error", err?.message || "Network error. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -170,7 +218,11 @@ export default function GuestVisitForm() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <FormHeader title="Register a Guest" subtitle="Add visitor details" icon="person-add" />
+          <FormHeader
+            title={isEdit ? "Update Guest" : "Register a Guest"}
+            subtitle={isEdit ? "Edit visitor details" : "Add visitor details"}
+            icon="person-add"
+          />
 
           {/* Visitor */}
           <View style={[styles.card, { backgroundColor: colors.card }]}>
@@ -207,6 +259,32 @@ export default function GuestVisitForm() {
           {/* Visit details */}
           <View style={[styles.card, { backgroundColor: colors.card }]}>
             <Text style={styles.sectionLabel}>Visit Details</Text>
+
+            <View style={{ marginBottom: 16 }}>
+              <Text style={[styles.label, { color: colors.text }]}>Visiting Unit *</Text>
+              <Pressable
+                style={[
+                  styles.selector,
+                  { backgroundColor: colors.inputBg, borderColor: colors.border },
+                  errors.apartment_id && { borderColor: "#f43f5e" },
+                ]}
+                onPress={() => setModal("apartment")}
+              >
+                <Ionicons name="home-outline" size={18} color="#159df8" />
+                <Text
+                  style={[
+                    styles.selectorText,
+                    { color: selectedApartment ? colors.text : colors.muted },
+                  ]}
+                >
+                  {selectedApartment ? selectedApartment.apartment_code : "Select unit"}
+                </Text>
+                <Ionicons name="chevron-down" size={18} color={colors.muted} />
+              </Pressable>
+              {errors.apartment_id ? (
+                <Text style={styles.fieldError}>{errors.apartment_id}</Text>
+              ) : null}
+            </View>
 
             <Selector
               label="Visit Type"
@@ -251,7 +329,7 @@ export default function GuestVisitForm() {
           </View>
 
           <PrimaryButton
-            label="Register Guest"
+            label={isEdit ? "Update Guest" : "Register Guest"}
             icon="checkmark"
             loading={loading}
             colors={["#07ce60", "#059c4a"]}
@@ -270,9 +348,49 @@ export default function GuestVisitForm() {
         <Pressable style={styles.overlay} onPress={() => setModal(null)}>
           <View style={[styles.modal, { backgroundColor: colors.card }]}>
             <Text style={[styles.modalTitle, { color: colors.text }]}>
-              {modal === "visit" ? "Visit Type" : "Access Method"}
+              {modal === "visit"
+                ? "Visit Type"
+                : modal === "access"
+                ? "Access Method"
+                : "Visiting Unit"}
             </Text>
-            {(modal === "visit" ? VISIT_TYPES : ACCESS_METHODS).map((opt) => {
+
+            {modal === "apartment" ? (
+              <ScrollView style={{ maxHeight: 320 }} keyboardShouldPersistTaps="handled">
+                {apartments.length === 0 ? (
+                  <Text style={[styles.modalItemText, { color: colors.muted, padding: 12 }]}>
+                    No units available
+                  </Text>
+                ) : (
+                  apartments.map((a) => {
+                    const active = a.id === apartmentId;
+                    return (
+                      <TouchableOpacity
+                        key={a.id}
+                        style={[
+                          styles.modalItem,
+                          active && { backgroundColor: isDark ? "rgba(58,169,240,0.15)" : "#f0f9ff" },
+                        ]}
+                        onPress={() => {
+                          setApartmentId(a.id);
+                          setErrors((prev) => ({ ...prev, apartment_id: undefined }));
+                          setModal(null);
+                        }}
+                      >
+                        <View style={[styles.modalIcon, { backgroundColor: "#e0f2fe" }]}>
+                          <Ionicons name="home" size={17} color="#159df8" />
+                        </View>
+                        <Text style={[styles.modalItemText, { color: colors.text }]}>
+                          {a.apartment_code}
+                        </Text>
+                        {active && <Ionicons name="checkmark-circle" size={20} color="#159df8" />}
+                      </TouchableOpacity>
+                    );
+                  })
+                )}
+              </ScrollView>
+            ) : (
+            (modal === "visit" ? VISIT_TYPES : ACCESS_METHODS).map((opt) => {
               const active = modal === "visit" ? opt === visitType : opt === accessMethod;
               const icon = modal === "visit" ? VISIT_ICON[opt] : ACCESS_ICON[opt];
               return (
@@ -295,7 +413,8 @@ export default function GuestVisitForm() {
                   {active && <Ionicons name="checkmark-circle" size={20} color="#159df8" />}
                 </TouchableOpacity>
               );
-            })}
+            })
+            )}
           </View>
         </Pressable>
       </Modal>
@@ -341,6 +460,7 @@ const styles = StyleSheet.create({
     height: 54,
   },
   selectorText: { flex: 1, fontSize: 14.5, fontWeight: "600" },
+  fieldError: { color: "#e11d48", fontSize: 13, marginTop: 6, marginLeft: 4 },
 
   overlay: {
     flex: 1,

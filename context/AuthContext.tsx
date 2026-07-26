@@ -8,14 +8,17 @@ interface User {
   name?: string;
   email?: string;
   is_owner?: boolean;
+  has_active_lease?: boolean;
   token: string;
 }
+
+type LoginMeta = { is_owner?: boolean; has_active_lease?: boolean };
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   authToken : string;
-  login: (token: string, isOwner?: boolean) => Promise<void>;
+  login: (token: string, meta?: LoginMeta) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -34,7 +37,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       try {
         const res = await api.get("/me");
         const storedOwner = await SecureStore.getItemAsync("is_owner");
-        setUser({ ...res, token, is_owner: res?.is_owner ?? storedOwner === "1" });
+        const storedLease = await SecureStore.getItemAsync("has_active_lease");
+        setUser({
+          ...res,
+          token,
+          is_owner: res?.is_owner ?? storedOwner === "1",
+          has_active_lease: res?.has_active_lease ?? storedLease === "1",
+        });
         setAuthToken(token);
         syncPushToken();
       } catch (err) {
@@ -47,15 +56,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     loadUser();
   }, []);
 
-  const login = async (token: string, isOwner?: boolean) => {
+  const login = async (token: string, meta?: LoginMeta) => {
     try {
       await SecureStore.setItemAsync("token", token);
-      if (isOwner !== undefined) {
-        await SecureStore.setItemAsync("is_owner", isOwner ? "1" : "0");
+      if (meta?.is_owner !== undefined) {
+        await SecureStore.setItemAsync("is_owner", meta.is_owner ? "1" : "0");
+      }
+      if (meta?.has_active_lease !== undefined) {
+        await SecureStore.setItemAsync("has_active_lease", meta.has_active_lease ? "1" : "0");
       }
       const res = await api.get("/me");
       const storedOwner = await SecureStore.getItemAsync("is_owner");
-      setUser({ ...res, token, is_owner: res?.is_owner ?? isOwner ?? storedOwner === "1" });
+      const storedLease = await SecureStore.getItemAsync("has_active_lease");
+      setUser({
+        ...res,
+        token,
+        is_owner: res?.is_owner ?? meta?.is_owner ?? storedOwner === "1",
+        has_active_lease: res?.has_active_lease ?? meta?.has_active_lease ?? storedLease === "1",
+      });
       setAuthToken(token);
       syncPushToken();
     } catch (err) {
@@ -69,6 +87,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const logout = async () => {
     await SecureStore.deleteItemAsync("token");
     await SecureStore.deleteItemAsync("is_owner");
+    await SecureStore.deleteItemAsync("has_active_lease");
     setUser(null);
   };
 

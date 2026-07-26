@@ -1,4 +1,4 @@
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
   Alert,
@@ -29,9 +29,17 @@ export default function TicketForm() {
   const { colors, isDark } = useTheme();
   const priorityOptions = ["high", "medium", "low"];
 
-  const [subject, setSubject] = useState("");
-  const [priority, setPriority] = useState(priorityOptions[0]);
-  const [description, setDescription] = useState("");
+  const params = useLocalSearchParams<{
+    id?: string;
+    subject?: string;
+    priority?: string;
+    description?: string;
+  }>();
+  const isEdit = !!params.id;
+
+  const [subject, setSubject] = useState(params.subject ?? "");
+  const [priority, setPriority] = useState((params.priority || priorityOptions[0]).toLowerCase());
+  const [description, setDescription] = useState(params.description ?? "");
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -44,24 +52,32 @@ export default function TicketForm() {
 
     setLoading(true);
     try {
-      const response = await api.post("/tickets", { subject, priority, description });
+      const payload = { subject, priority, description };
+      const response = isEdit
+        ? await api.put(`/tickets/${params.id}`, payload)
+        : await api.post("/tickets", payload);
 
-      if (response?.message) {
-        Alert.alert("Success", `Ticket Submitted! Thank You.`);
-        setSubject("");
-        setPriority(priorityOptions[0]);
-        setDescription("");
+      if (response?.message || response?.status || response?.data) {
+        if (isEdit) {
+          Alert.alert("Success", "Ticket updated successfully!");
+          router.back();
+        } else {
+          Alert.alert("Success", `Ticket Submitted! Thank You.`);
+          setSubject("");
+          setPriority(priorityOptions[0]);
+          setDescription("");
+        }
       } else {
         Alert.alert("Error", "Something went wrong. Please try again");
       }
-    } catch (error) {
-      Alert.alert("Error", "Network error. Please try again.");
+    } catch (error: any) {
+      Alert.alert("Error", error?.message || "Network error. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  const meta = PRIORITY_META[priority];
+  const meta = PRIORITY_META[priority] ?? PRIORITY_META.medium;
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.bg }]} edges={["top"]}>
@@ -75,8 +91,8 @@ export default function TicketForm() {
           showsVerticalScrollIndicator={false}
         >
           <FormHeader
-            title="Submit a Ticket"
-            subtitle="Tell us about your issue"
+            title={isEdit ? "Update Ticket" : "Submit a Ticket"}
+            subtitle={isEdit ? "Edit your ticket details" : "Tell us about your issue"}
             icon="construct"
           />
 
@@ -167,20 +183,22 @@ export default function TicketForm() {
             />
 
             <PrimaryButton
-              label="Submit Ticket"
+              label={isEdit ? "Update Ticket" : "Submit Ticket"}
               icon="paper-plane"
               loading={loading}
               colors={["#07ce60", "#059c4a"]}
               onPress={handleSubmit}
             />
 
-            <TouchableOpacity
-              onPress={() => router.push("/ticketsList")}
-              style={styles.listBtn}
-            >
-              <Ionicons name="list" size={18} color="#159df8" />
-              <Text style={styles.listBtnText}>View My Tickets</Text>
-            </TouchableOpacity>
+            {!isEdit && (
+              <TouchableOpacity
+                onPress={() => router.push("/ticketsList")}
+                style={styles.listBtn}
+              >
+                <Ionicons name="list" size={18} color="#159df8" />
+                <Text style={styles.listBtnText}>View My Tickets</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
